@@ -156,6 +156,10 @@
                              [else 3])]
           [else (random 5)])))
 
+;gets the posns of all the points on the given board
+(define (getposn board blocknum blocksize)
+  )
+
 ;get the approximate list position OR x/y based on where the mouse is
 ;returns either (list 0 0 0) <- not on board
 ;or (list 1 lstx lsty) <- on board, use coordinates to render
@@ -165,7 +169,7 @@
 ;    (cond [(inhitbox? mx my 0 ymodifier gamesize gamesize) (list 0 0 0)]
 ;          [else ])))
 
-;check end checks if the previous move was a pass and if the current move is a pass
+;checks if the previous move was a pass and if the current move is a pass
 ;(define (checkend ))
 
 ;mouse/hitbox functions
