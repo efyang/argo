@@ -160,7 +160,7 @@
   (local [(define rlst (reverse lst))]
     (reverse (remove (first rlst) rlst))))
 
-;gets the posns of all the points on the given boar
+;gets the posns of all the points on the given board
 ;(list x y xinlist yinlist)
 
 (define (posnrow lsty row blocksize)
@@ -173,14 +173,23 @@
                   (list 0 (+ (* blocksize lsty) ymodifier) 0 lsty (list (list 0 (+ (* blocksize lsty) ymodifier) 0 lsty))) 
                   alist))))
 
-
-;(define (posnrow lsty row blocksize)
-;  (append (list (list 0 (+ (* blocksize lsty) ymodifier) 0 lsty)) (fifth (foldr (lambda (x pres) (list (+ blocksize (first pres)) (second pres) (add1 (third pres)) lsty (list (fifth pres) (list (+ blocksize (first pres)) (second pres) (add1 (third pres)))))) 
-;         (list 0 (+ (* blocksize lsty) ymodifier) 0 lsty (list)) 
-;         row))))
-
 (define (getposn board blocknum blocksize)
-  (foldr ))
+  (first (foldr (lambda (x curres) (list (append (first curres) 
+                                                       (list (posnrow (second curres) x blocksize))) 
+                                               (add1 (second curres)))) 
+                      (list empty 0) 
+                      board)))
+
+;gets everything before pos
+(define (lhead pos lst)
+  (cond [()]))
+;gets everything after pos
+(define (ltail pos lst)
+  (cond [()]))
+
+;gets the distance of each point away from the given coord, using the quadrants for speed
+;(define (getdistances))
+
 
 ;get the approximate list position OR x/y based on where the mouse is
 ;returns either (list 0 0 0) <- not on board
@@ -196,6 +205,7 @@
 
 ;mouse/hitbox functions
 
-(mainrender 500 19 (blkmap 19) (countpieces (blkmap 19)) (list 1 (/ (getblocksize 500 19) 2) (/ (getblocksize 500 19) 2)) (list 0 0 0))
-(render (gengame 0 19))
-(posnrow 0 (list 1 1 1 1) 20)
+;(mainrender 500 19 (blkmap 19) (countpieces (blkmap 19)) (list 1 (/ (getblocksize 500 19) 2) (/ (getblocksize 500 19) 2)) (list 0 0 0))
+;(render (gengame 0 19))
+;(posnrow 0 (list 1 1 1 1) 20)
+;(getposn (blkmap 19) 19 20)
