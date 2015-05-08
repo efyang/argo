@@ -10,7 +10,7 @@
 ;0 - black
 ;1 - white
 ;main game model is (list ptype boardsize blocknum piecemap pieceinfo previousopponentmove)
-(define (gengame ptype blocknum) (list ptype 500 blocknum (basemap blocknum) (list 0 0 0) (list 1 -200 -200) (list 0 0 0)))
+(define (gengame ptype blocknum) (list ptype 500 blocknum (basemap blocknum) (list 0 0 0) (list 1 -200 -200)))
 ;move is (list mtype xcoord ycoord)
 ;0 - pass (list 0 -200 -200)
 ;1 - set (list 1 x y)
@@ -119,14 +119,14 @@
   (circle (- psize 6) "solid" "gray"))
 
 ;main render function
-(define (mainrender gamesize blocknum boardmap piecenums pmoveinfo approxnew)
+(define (mainrender gamesize blocknum boardmap piecenums pmoveinfo)
   (local [(define bsize (getblocksize gamesize blocknum))
           (define psize (getplen bsize))]
     (above titlepart (place-image (mkpmove psize) (second pmoveinfo) (third pmoveinfo) (overlay (renderpieces boardmap psize bsize) (genboard gamesize blocknum))) (textcount piecenums))))
 
 ;higher level render based on model architecture
 (define (render model)
-  (mainrender (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model)))
+  (mainrender (second model) (third model) (fourth model) (fifth model) (sixth model)))
 
 ;/render functions
 
@@ -134,41 +134,10 @@
 
 (define ymodifier (image-height titlepart))
 
-;check if within hitbox
-;x, y , hitbox corner x, hitbox corner y, hitbox width, hitbox height -> bool 
-(define (inhitbox? x y hx hy hw hh)
-  (and (>= x hx) 
-       (<= x (+ hx hw))
-       (>= y hy)
-       (<= y (+ hy hh))))
-
-;distance formula
-(define (distance x1 y1 x2 y2)
-  (sqrt (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2))))
-
-;gets the quadrant that the point is on in a graph of w * h where the origin is half w, half h (based on computer coordinates, y is flipped)
-(define (getqd x y w h)
-  (local [(define halfw (round (/ w 2)))
-          (define halfh (round (/ h 2)))]
-    (cond [(< y halfh) (cond [(> x halfw) 1]
-                             [else 2])]
-          [(> y halfh) (cond [(> x halfw) 4]
-                             [else 3])]
-          [else (random 5)])))
-
-;get the approximate list position OR x/y based on where the mouse is
-;returns either (list 0 0 0) <- not on board
-;or (list 1 lstx lsty) <- on board, use coordinates to render
-;(define (approxposn rmx rmy gamesize blocknum)
-;  (local [(define mx rmx)
-;          (define my (+ ymodifier rmy))]
-;    (cond [(inhitbox? mx my 0 ymodifier gamesize gamesize) (list 0 0 0)]
-;          [else ])))
-
 ;check end checks if the previous move was a pass and if the current move is a pass
 ;(define (checkend ))
 
-;mouse/hitbox functions
+;/heyboard/hitbox functions
 
-(mainrender 500 19 (blkmap 19) (countpieces (blkmap 19)) (list 1 (/ (getblocksize 500 19) 2) (/ (getblocksize 500 19) 2)) (list 0 0 0))
+(mainrender 500 19 (blkmap 19) (countpieces (blkmap 19)) (list 1 (/ (getblocksize 500 19) 2) (/ (getblocksize 500 19) 2)))
 (render (gengame 0 19))
