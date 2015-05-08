@@ -1,2 +1,3 @@
 # argo
-Racket Go Game
+
+Go game in Racket.
