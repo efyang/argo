@@ -9,13 +9,8 @@
 ;ptype is player color
 ;0 - black
 ;1 - white
-;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
-;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords | pieceinfos <- precalculated coordinates | blocksize, piecesize)
-(define (gengame ptype blocknum gamesize) (list ptype gamesize blocknum (basemap blocknum) 
-                                                (list 0 0 0) (list 1 -200 -200) (list 0 0 0 0) 
-                                                (getposns (basemap blocknum) blocknum (getblocksize gamesize blocknum))
-                                                (getblocksize gamesize blocknum)
-                                                (getplen (getblocksize gamesize blocknum))))
+;main game model is (list ptype boardsize blocknum piecemap pieceinfo previousopponentmove)
+(define (gengame ptype blocknum) (list ptype 500 blocknum (basemap blocknum) (list 0 0 0) (list 1 -200 -200) (list 0 0 0)))
 ;move is (list mtype xcoord ycoord)
 ;0 - pass (list 0 -200 -200)
 ;1 - set (list 1 x y)
@@ -124,12 +119,14 @@
   (circle (- psize 6) "solid" "gray"))
 
 ;main render function
-(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize)
-  (above titlepart (place-image (mkpmove psize) (second pmoveinfo) (third pmoveinfo) (overlay (renderpieces boardmap psize bsize) (genboard gamesize blocknum))) (textcount piecenums)))
+(define (mainrender gamesize blocknum boardmap piecenums pmoveinfo approxnew)
+  (local [(define bsize (getblocksize gamesize blocknum))
+          (define psize (getplen bsize))]
+    (above titlepart (place-image (mkpmove psize) (second pmoveinfo) (third pmoveinfo) (overlay (renderpieces boardmap psize bsize) (genboard gamesize blocknum))) (textcount piecenums))))
 
 ;higher level render based on model architecture
 (define (render model)
-  (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model)))
+  (mainrender (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model)))
 
 ;/render functions
 
@@ -165,6 +162,7 @@
 
 ;gets the posns of all the points on the given board
 ;(list x y xinlist yinlist)
+
 (define (posnrow lsty row blocksize)
   (local [(define alist (init row))]
     (fifth (foldr (lambda (x pres) (list (+ blocksize (first pres)) 
@@ -175,32 +173,19 @@
                   (list 0 (+ (* blocksize lsty) ymodifier) 0 lsty (list (list 0 (+ (* blocksize lsty) ymodifier) 0 lsty))) 
                   alist))))
 
-(define (getposns board blocknum blocksize)
+(define (getposn board blocknum blocksize)
   (first (foldr (lambda (x curres) (list (append (first curres) 
                                                        (list (posnrow (second curres) x blocksize))) 
                                                (add1 (second curres)))) 
                       (list empty 0) 
                       board)))
 
-;get quadrant -> cut list based on quadrant -> quicksort based on distance
-
 ;gets everything before pos
-(define (lhead lst pos)
-  (reverse (list-tail (reverse lst) (+ (- (length lst) pos) 1))))
+(define (lhead pos lst)
+  (cond [()]))
 ;gets everything after pos
-(define (ltail lst pos)
-  (list-tail lst pos))
-
-;cuts the board based on quadrants
-(define (cutboard board quadrant boarddimension)
-  (local [(define halfdimension (ceiling (/ boarddimension 2)))
-          (define vsplitb (cond [(or (= quadrant 1) (= quadrant 2)) (lhead board (+ halfdimension 1))]
-                                [(or (= quadrant 3) (= quadrant 4)) (ltail board (- halfdimension 1))]
-                                [else board]))
-          (define hsplitb (cond [(or (= quadrant 1) (= quadrant 4)) (map (lambda (x) (ltail x (- halfdimension 1))) vsplitb)]
-                                [(or (= quadrant 2) (= quadrant 3)) (map (lambda (x) (lhead x (+ halfdimension 1))) vsplitb)]
-                                [else vsplitb]))]
-    hsplitb))
+(define (ltail pos lst)
+  (cond [()]))
 
 ;gets the distance of each point away from the given coord, using the quadrants for speed
 ;(define (getdistances))
@@ -220,6 +205,7 @@
 
 ;mouse/hitbox functions
 
-;(getposns (blkmap 19) 19 20)
-;(cutboard (getposns (blkmap 19) 19 20) 2 19)
-(render (gengame 1 19 500))
+;(mainrender 500 19 (blkmap 19) (countpieces (blkmap 19)) (list 1 (/ (getblocksize 500 19) 2) (/ (getblocksize 500 19) 2)) (list 0 0 0))
+;(render (gengame 0 19))
+;(posnrow 0 (list 1 1 1 1) 20)
+;(getposn (blkmap 19) 19 20)
