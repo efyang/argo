@@ -7,8 +7,8 @@
 (define titlepart (text "Go" 30 "black"))
 
 ;ptype is player color
-;0 - black
-;1 - white
+;1 - black
+;2 - white
 ;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
 ;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords | pieceinfos <- precalculated coordinates | blocksize, piecesize)
 (define (gengame ptype blocknum gamesize) (list ptype 
@@ -142,7 +142,10 @@
                       (place-image (mkpmove psize) 
                                    (second pmoveinfo) 
                                    (third pmoveinfo) 
-                                   (overlay (renderpieces boardmap psize bsize) (genboard gamesize blocknum))) 
+                                   (overlay (above (square (* 1 bsize) "solid" (make-color 0 0 0 0))
+                                                   (beside (square (* 1 bsize) "solid" (make-color 0 0 0 0))
+                                                           (renderpieces boardmap psize bsize))) 
+                                            (genboard gamesize blocknum))) 
                       (textcount piecenums))))
 
 ;higher level render based on model architecture
@@ -186,7 +189,7 @@
                                          (add1 (third pres)) 
                                          lsty 
                                          (append (fifth pres) (list (list (+ blocksize (first pres)) (second pres) (add1 (third pres)) lsty))))) 
-                  (list blocksize (+ (* blocksize lsty) blocksize ymodifier) 0 lsty (list (list blocksize (+ (* blocksize lsty) blocksize ymodifier) 0 lsty))) 
+                  (list (* 1.5 blocksize) (+ (* blocksize lsty) (* 1.5 blocksize) ymodifier) 0 lsty (list (list (* 1.5 blocksize) (+ (* blocksize lsty) (* 1.5 blocksize) ymodifier) 0 lsty))) 
                   alist))))
 
 (define (getposns board blocknum blocksize)
@@ -245,21 +248,36 @@
 ;get the approximate list position OR x/y based on where the mouse is
 ; Int mx Int my Int gamesize Int Blocknum List board -> List (point)
 (define (approxposn mx my gamesize blocknum board bsize)
-  (cond [(inhitbox? mx (- my ymodifier) bsize bsize (+ gamesize bsize) (+ gamesize bsize)) (local [(define mquadrant (getqd mx (- my ymodifier) gamesize gamesize))
-                                                                       (define filteredboard (reformcuts (cutboard board mquadrant blocknum)))]
-                                                                 (sortdistances mx my filteredboard))]
-        [else (list -200 -200 -200 -200)]))
+  (local [(define mquadrant (getqd mx (- my ymodifier) gamesize gamesize))
+          (define filteredboard (reformcuts (cutboard board mquadrant blocknum)))]
+    (sortdistances mx my filteredboard)))
 
+;replace item at lref index with newitem
+(define (replace lst newitem lref)
+  (append (lhead lst (+ lref 1)) (list newitem) (ltail lst (+ lref 1))))
+
+;bit messy, clean up later
 (define (mousehandler model x y event)
-  (cond [(string=? event "move") (local [(define gamesize (second model))
-                                  (define blocknum (third model))
-                                  (define posnboard (eighth model))
-                                  (define bsize (ninth model))
-                                  (define gotposn (approxposn x y gamesize blocknum posnboard bsize))]
-                                   ;(print gotposn)
-                                   (list (first model) gamesize blocknum (fourth model) (fifth model) (sixth model) gotposn posnboard bsize (tenth model)))]
-        ;[(= event "button-down")]
-        [else model]))
+  (local [(define gamesize (second model))
+          (define blocknum (third model))
+          (define posnboard (eighth model))
+          (define bsize (ninth model))
+          (define inhit (inhitbox? x (- y ymodifier) bsize bsize (+ gamesize bsize) (+ gamesize bsize)) )]
+    (cond [inhit (cond [(string=? event "move") 
+                        (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))]
+                            (list (first model) gamesize blocknum (fourth model) (fifth model) (sixth model) 
+                                  gotposn
+                                  posnboard bsize (tenth model)))]
+                       [(string=? event "button-down") (local [(define curboard (fourth model))
+                                                        (define gotposn (approxposn x y gamesize blocknum posnboard bsize))
+                                                        (define replacey (fourth gotposn))
+                                                        (define replacex (third gotposn))
+                                                        (define ptype (first model))]
+                                                         (list (first model) gamesize blocknum 
+                                                               (replace curboard (replace (list-ref curboard replacey) ptype replacex) replacey)
+                                                               (fifth model) (sixth model) gotposn posnboard bsize (tenth model)))]
+                       [else model])]
+          [else model])))
 
 ;checks if the previous move was a pass and if the current move is a pass
 ;(define (checkend ))
@@ -270,6 +288,6 @@
 ;(cutboard (getposns (blkmap 19) 19 20) 2 19)
 ;(render (gengame 1 19 500))
 
-(big-bang (gengame 0 11 500)
+(big-bang (gengame 1 5 500)
           (on-mouse mousehandler)
           (on-draw render))
