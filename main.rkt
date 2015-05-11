@@ -11,8 +11,13 @@
 ;1 - white
 ;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
 ;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords | pieceinfos <- precalculated coordinates | blocksize, piecesize)
-(define (gengame ptype blocknum gamesize) (list ptype gamesize blocknum (basemap blocknum) 
-                                                (list 0 0 0) (list 1 -200 -200) (list 0 0 0 0) 
+(define (gengame ptype blocknum gamesize) (list ptype 
+                                                gamesize 
+                                                blocknum 
+                                                (basemap blocknum) 
+                                                (list 0 0 0) 
+                                                (list 1 -200 -200) 
+                                                (list -200 -200 -200 -200) 
                                                 (getposns (basemap blocknum) blocknum (getblocksize gamesize blocknum))
                                                 (getblocksize gamesize blocknum)
                                                 (getplen (getblocksize gamesize blocknum))))
@@ -123,9 +128,22 @@
 (define (mkpmove psize)
   (circle (- psize 6) "solid" "gray"))
 
+;possible next move marker
+(define (nextmove ptype psize)
+  (cond [(= 1 ptype) (circle psize "solid" (make-color 0 0 0 175))]
+        [else (circle psize "solid" (make-color 255 255 255 175))]))
+
 ;main render function
 (define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize)
-  (above titlepart (place-image (mkpmove psize) (second pmoveinfo) (third pmoveinfo) (overlay (renderpieces boardmap psize bsize) (genboard gamesize blocknum))) (textcount piecenums)))
+  (place-image (nextmove ptype psize)
+               (first approxnew)
+               (second approxnew)
+               (above titlepart 
+                      (place-image (mkpmove psize) 
+                                   (second pmoveinfo) 
+                                   (third pmoveinfo) 
+                                   (overlay (renderpieces boardmap psize bsize) (genboard gamesize blocknum))) 
+                      (textcount piecenums))))
 
 ;higher level render based on model architecture
 (define (render model)
@@ -144,10 +162,6 @@
        (<= x (+ hx hw))
        (>= y hy)
        (<= y (+ hy hh))))
-
-;distance formula
-(define (distance x1 y1 x2 y2)
-  (sqrt (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2))))
 
 ;gets the quadrant that the point is on in a graph of w * h where the origin is half w, half h (based on computer coordinates, y is flipped)
 (define (getqd x y w h)
@@ -202,24 +216,42 @@
                                 [else vsplitb]))]
     hsplitb))
 
-;gets the distance of each point away from the given coord, using the quadrants for speed
-;(define (getdistances))
+
+;distance formula
+(define (distance x1 y1 x2 y2)
+  (sqrt (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2))))
+
+;make blocks of blocklen length (unsafe, needs to fit perfectly, but faster)
+(define (mkblocks lst blocklen)
+  (cond [(empty? lst) empty]
+        [else (append (list (lhead lst (+ blocklen 1))) (mkblocks (ltail lst blocklen) blocklen))]))
+
+;reforms the board into a single-ish dimensional list
+(define (reformcuts cutboard)
+  (mkblocks (flatten cutboard) 4))
+
+;gets the point with the shortest distance from the mouse coordinates, using the quadrants for speed
+(define (sortdistances mx my points [cursmallest (list -200 -200 -200 -200)] [pdistance +inf.0])
+  (cond [(empty? points) cursmallest]
+        [else (local [(define curpt (first points))
+                      (define d2cur (distance (first curpt) (second curpt) mx my))]
+                (cond [(< d2cur pdistance) (sortdistances mx my (rest points) curpt d2cur)]
+                      [else (sortdistances mx my (rest points) cursmallest pdistance)]))]))
 
 
 ;get the approximate list position OR x/y based on where the mouse is
-;returns either (list 0 0 0) <- not on board
-;or (list 1 lstx lsty) <- on board, use coordinates to render
-;(define (approxposn rmx rmy gamesize blocknum)
-;  (local [(define mx rmx)
-;          (define my (+ ymodifier rmy))]
-;    (cond [(inhitbox? mx my 0 ymodifier gamesize gamesize) (list 0 0 0)]
-;          [else ])))
+; Int mx Int my Int gamesize Int Blocknum List board -> List (point)
+(define (approxposn mx my gamesize blocknum board)
+    (cond [(inhitbox? mx (- my ymodifier) 0 0 gamesize gamesize) (list -200 -200 -200 -200)]
+          [else (local [(define mquadrant (getqd mx (- my ymodifier) gamesize gamesize))
+                        (define filteredboard (reformcuts (cutboard board mquadrant blocknum)))]
+                  (sortdistances mx my filteredboard))]))
 
 ;checks if the previous move was a pass and if the current move is a pass
 ;(define (checkend ))
 
-;mouse/hitbox functions
+;end mouse/hitbox functions
 
 ;(getposns (blkmap 19) 19 20)
-;(cutboard (getposns (blkmap 19) 19 20) 2 19)
+(cutboard (getposns (blkmap 19) 19 20) 2 19)
 (render (gengame 1 19 500))
