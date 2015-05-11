@@ -9,8 +9,12 @@
 ;ptype is player color
 ;1 - black
 ;2 - white
+;turn is based on player colors
+;0 - not set
+;1 - black
+;2 - white
 ;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
-;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords | pieceinfos <- precalculated coordinates | blocksize, piecesize)
+;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords | pieceinfos <- precalculated coordinates | blocksize, piecesize, turn)
 (define (gengame ptype blocknum gamesize) (list ptype 
                                                 gamesize 
                                                 (- blocknum 1)
@@ -20,7 +24,8 @@
                                                 (list -200 -200 -200 -200) 
                                                 (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
                                                 (getblocksize gamesize (- blocknum 1))
-                                                (getplen (getblocksize gamesize (- blocknum 1)))))
+                                                (getplen (getblocksize gamesize (- blocknum 1)))
+                                                2))
 ;move is (list mtype xcoord ycoord)
 ;0 - pass (list 0 -200 -200)
 ;1 - set (list 1 x y)
@@ -134,8 +139,9 @@
         [else (circle psize "solid" (make-color 255 255 255 200))]))
 
 ;main render function
-(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize)
-  (place-image (nextmove ptype psize)
+(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn)
+  (place-image (cond [(= turn ptype) (nextmove ptype psize)]
+                     [else (square 0 "solid" (make-color 0 0 0 0))])
                (first approxnew)
                (second approxnew)
                (above titlepart 
@@ -148,7 +154,7 @@
 
 ;higher level render based on model architecture
 (define (render model)
-  (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model)))
+  (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (last model)))
 
 ;/render functions
 
@@ -187,7 +193,7 @@
                                          (add1 (third pres)) 
                                          lsty 
                                          (append (fifth pres) (list (list (+ blocksize (first pres)) (second pres) (add1 (third pres)) lsty))))) 
-                  (list (* 0.5 blocksize) (+ (* blocksize lsty) (* 0.5 blocksize) ymodifier) 0 lsty (list (list (* 0.5 blocksize) (+ (* blocksize lsty) (* 0.5 blocksize) ymodifier) 0 lsty))) 
+                  (list (/ blocksize 2) (+ (* blocksize lsty) (/ blocksize 2) ymodifier) 0 lsty (list (list (/ blocksize 2) (+ (* blocksize lsty) (/ blocksize 2) ymodifier) 0 lsty))) 
                   alist))))
 
 (define (getposns board blocknum blocksize)
@@ -256,19 +262,21 @@
 
 ;bit messy, clean up later
 (define (mousehandler model x y event)
-  (local [(define gamesize (second model))
+  (local [(define ptype (first model))
+          (define gamesize (second model))
           (define blocknum (third model))
           (define posnboard (eighth model))
           (define bsize (ninth model))
           (define board (fourth model))
+          (define turn (last model))
           (define inhit (inhitbox? (+ x bsize) (+ bsize(- y ymodifier)) bsize bsize (+ gamesize bsize) (+ gamesize bsize)))]
-    (cond [inhit (cond [(string=? event "move") 
+    (cond [(and inhit (= ptype turn)) (cond [(string=? event "move") 
                         (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))
                                 (define posnvalue (list-ref (list-ref board (fourth gotposn)) (third gotposn)))]
                             (list (first model) gamesize blocknum board (fifth model) (sixth model) 
                                   (cond [(= posnvalue 0) gotposn]
                                         [else (list -200 -200 -200 -200)])
-                                  posnboard bsize (tenth model)))]
+                                  posnboard bsize (tenth model) (last model)))]
                        [(string=? event "button-down") (local [
                                                         (define gotposn (approxposn x y gamesize blocknum posnboard bsize))
                                                         (define replacey (fourth gotposn))
@@ -277,10 +285,10 @@
                                                         (define posnvalue (list-ref (list-ref board replacey) replacex))]
                                                          (cond [(= posnvalue 0) (list (first model) gamesize blocknum 
                                                                                       (replace board (replace (list-ref board replacey) ptype replacex) replacey)
-                                                                                      (fifth model) (sixth model) gotposn posnboard bsize (tenth model))]
+                                                                                      (fifth model) (sixth model) gotposn posnboard bsize (tenth model) (last model))]
                                                                [else (list (first model) gamesize blocknum 
                                                                            board
-                                                                           (fifth model) (sixth model) (list -200 -200 -200 -200) posnboard bsize (tenth model))]))]
+                                                                           (fifth model) (sixth model) (list -200 -200 -200 -200) posnboard bsize (tenth model) (last model))]))]
                        [else model])]
           [else model])))
 
