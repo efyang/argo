@@ -4,5 +4,7 @@ Go game in Racket.
 
 #### Todo:
 
-* Implement new position approximation and render functions
-* Implement key handler and related functions
+* more turn based stuff
+* server <-> client communications
+* starting gui
+* SURROUND FUNCTION
