@@ -14,7 +14,7 @@
 (define (gengame ptype blocknum gamesize) (list ptype 
                                                 gamesize 
                                                 (- blocknum 1)
-                                                (basemap blocknum) 
+                                                (basemap (- blocknum 1)) 
                                                 (list 0 0 0) 
                                                 (list 1 -200 -200) 
                                                 (list -200 -200 -200 -200) 
@@ -97,8 +97,8 @@
 ;Int val, Int plen, Int blocklen -> Image
 (define (renderpiece val plen blocklen)
   (cond [(= 0 val) (square blocklen "solid" (make-color 0 0 0 0))]
-        [(= 1 val) (overlay (circle plen "solid" "black") (square blocklen "solid" (make-color 0 0 0 0)))]
-        [(= 2 val) (overlay (circle plen "solid" "white") (square blocklen "solid" (make-color 0 0 0 0)))]))
+        [(= 1 val) (overlay (circle plen "outline" "gray") (circle plen "solid" "black") (square blocklen "solid" (make-color 0 0 0 0)))]
+        [(= 2 val) (overlay (circle plen "outline" "gray") (circle plen "solid" "white") (square blocklen "solid" (make-color 0 0 0 0)))]))
 
 ;maps that render and accumulates it
 ;after making a map of all pieces
@@ -142,9 +142,7 @@
                       (place-image (mkpmove psize) 
                                    (second pmoveinfo) 
                                    (third pmoveinfo) 
-                                   (overlay (above (square (* 1 bsize) "solid" (make-color 0 0 0 0))
-                                                   (beside (square (* 1 bsize) "solid" (make-color 0 0 0 0))
-                                                           (renderpieces boardmap psize bsize))) 
+                                   (overlay (renderpieces boardmap psize bsize) 
                                             (genboard gamesize blocknum))) 
                       (textcount piecenums))))
 
@@ -189,7 +187,7 @@
                                          (add1 (third pres)) 
                                          lsty 
                                          (append (fifth pres) (list (list (+ blocksize (first pres)) (second pres) (add1 (third pres)) lsty))))) 
-                  (list (* 1.5 blocksize) (+ (* blocksize lsty) (* 1.5 blocksize) ymodifier) 0 lsty (list (list (* 1.5 blocksize) (+ (* blocksize lsty) (* 1.5 blocksize) ymodifier) 0 lsty))) 
+                  (list (* 0.5 blocksize) (+ (* blocksize lsty) (* 0.5 blocksize) ymodifier) 0 lsty (list (list (* 0.5 blocksize) (+ (* blocksize lsty) (* 0.5 blocksize) ymodifier) 0 lsty))) 
                   alist))))
 
 (define (getposns board blocknum blocksize)
@@ -262,20 +260,27 @@
           (define blocknum (third model))
           (define posnboard (eighth model))
           (define bsize (ninth model))
-          (define inhit (inhitbox? x (- y ymodifier) bsize bsize (+ gamesize bsize) (+ gamesize bsize)) )]
+          (define board (fourth model))
+          (define inhit (inhitbox? (+ x bsize) (+ bsize(- y ymodifier)) bsize bsize (+ gamesize bsize) (+ gamesize bsize)))]
     (cond [inhit (cond [(string=? event "move") 
-                        (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))]
-                            (list (first model) gamesize blocknum (fourth model) (fifth model) (sixth model) 
-                                  gotposn
+                        (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))
+                                (define posnvalue (list-ref (list-ref board (fourth gotposn)) (third gotposn)))]
+                            (list (first model) gamesize blocknum board (fifth model) (sixth model) 
+                                  (cond [(= posnvalue 0) gotposn]
+                                        [else (list -200 -200 -200 -200)])
                                   posnboard bsize (tenth model)))]
-                       [(string=? event "button-down") (local [(define curboard (fourth model))
+                       [(string=? event "button-down") (local [
                                                         (define gotposn (approxposn x y gamesize blocknum posnboard bsize))
                                                         (define replacey (fourth gotposn))
                                                         (define replacex (third gotposn))
-                                                        (define ptype (first model))]
-                                                         (list (first model) gamesize blocknum 
-                                                               (replace curboard (replace (list-ref curboard replacey) ptype replacex) replacey)
-                                                               (fifth model) (sixth model) gotposn posnboard bsize (tenth model)))]
+                                                        (define ptype (first model))
+                                                        (define posnvalue (list-ref (list-ref board replacey) replacex))]
+                                                         (cond [(= posnvalue 0) (list (first model) gamesize blocknum 
+                                                                                      (replace board (replace (list-ref board replacey) ptype replacex) replacey)
+                                                                                      (fifth model) (sixth model) gotposn posnboard bsize (tenth model))]
+                                                               [else (list (first model) gamesize blocknum 
+                                                                           board
+                                                                           (fifth model) (sixth model) (list -200 -200 -200 -200) posnboard bsize (tenth model))]))]
                        [else model])]
           [else model])))
 
@@ -288,6 +293,6 @@
 ;(cutboard (getposns (blkmap 19) 19 20) 2 19)
 ;(render (gengame 1 19 500))
 
-(big-bang (gengame 1 5 500)
+(big-bang (gengame 2 11 500)
           (on-mouse mousehandler)
           (on-draw render))
