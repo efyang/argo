@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/gui
 
 (require picturing-programs)
 
@@ -297,9 +297,10 @@
 
 ;end mouse/hitbox functions
 
-;(getposns (blkmap 19) 19 20)
-;(cutboard (getposns (blkmap 19) 19 20) 2 19)
-;(render (gengame 1 19 500))
+;gui
+(define mgui (new frame% [label "Go"]))
+(send mgui show #t)
+;/gui
 
 (big-bang (gengame 2 11 500)
           (on-mouse mousehandler)
