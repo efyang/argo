@@ -131,7 +131,7 @@
 
 ;previous move marker
 (define (mkpmove psize)
-  (circle (- psize 6) "solid" "gray"))
+  (circle (max 0.0001 (- psize 6)) "solid" "gray"))
 
 ;possible next move marker
 (define (nextmove ptype psize)
@@ -298,10 +298,63 @@
 ;end mouse/hitbox functions
 
 ;gui
-(define mgui (new frame% [label "Go"]))
+(define gsize 5)
+(define wsize 512)
+;(define )
+(define mgui (new frame% [label "Go"]
+                  [width 200]                   
+                  [height 300]))
+(define toppanel (new horizontal-panel% [parent mgui]))
+(define ((sets s) btn evt)
+  (set! gsize s)
+  (send canv refresh-now))
+(define ((setw s) btn evt)
+  (set! wsize s)
+  (send canv refresh-now))
+(for ([i (in-range 8)])                        
+  (make-object button% (format "~a" (+ 5 (* 2 i))) toppanel (sets (+ 5 (* 2 i)))))
+(define midpanel (new horizontal-panel% [parent mgui]))
+(new button% [parent midpanel]             
+     [label "Decrease game window size"]     
+     [callback (lambda (button event) 
+                 (set! wsize (max 200 (- wsize 48)))
+                 (send canv refresh-now))])
+(new button% [parent midpanel]             
+     [label "Increase game window size"]     
+     [callback (lambda (button event) 
+                 (set! wsize (min 1280 (+ wsize 48)))
+                 (send canv refresh-now))])
+(define getip (new text-field% [parent mgui]
+                   [label "IP Address: "]))
+(define bcanv (new canvas% [parent mgui]             
+                 [paint-callback              
+                  (lambda (canvas dc)                               
+                    (send dc set-text-foreground "black")
+                    (send dc draw-text "Please keep in mind that more lines will result in a laggier game." 0 0))]))
+(define canv (new canvas% [parent mgui]             
+                 [paint-callback              
+                  (lambda (canvas dc)                               
+                    (send dc set-text-foreground "black")
+                    (send dc draw-text (string-append "Number of lines: " 
+                                                      (number->string gsize) 
+                                                      "        Game window size: " 
+                                                      (number->string wsize)) 0 0))]))
+(new canvas% [parent mgui])
+(define bottompanel (new horizontal-panel% [parent mgui]))
+(new button% [parent bottompanel]             
+     [label "Start"]     
+     [callback (lambda (button event)                         
+                 (send mgui show #f)
+                 (big-bang (gengame 2 gsize wsize)
+                           (on-mouse mousehandler)
+                           (on-draw render)))])
+(new button% [parent bottompanel]             
+     [label "Cancel"]     
+     [callback (lambda (button event)                         
+                 (send mgui show #f))])
 (send mgui show #t)
 ;/gui
 
-(big-bang (gengame 2 11 500)
-          (on-mouse mousehandler)
-          (on-draw render))
+;(big-bang (gengame 2 19 200)
+;          (on-mouse mousehandler)
+;          (on-draw render))
