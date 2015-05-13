@@ -3,8 +3,10 @@
 (require picturing-programs)
 (require "ip.rkt")
 
-(define linecolor "DarkBlue")
-(define squarecolor "NavajoWhite")
+(define linecolor "white")
+(define squarecolor "goldenrod")
+(define textcolor "black")
+(define bgcolor "goldenrod")
 (define titlepart (text "Go" 30 "black"))
 
 ;ptype is player color
@@ -17,6 +19,7 @@
 ;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
 ;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords 
 ;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn)
+
 (define (gengame ptype blocknum gamesize) (list ptype 
                                                 gamesize 
                                                 (- blocknum 1)
@@ -27,15 +30,16 @@
                                                 (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
                                                 (getblocksize gamesize (- blocknum 1))
                                                 (getplen (getblocksize gamesize (- blocknum 1)))
-                                                2))
+                                                ptype))
 ;move is (list mtype xcoord ycoord)
 ;0 - pass (list 0 -200 -200)
 ;1 - set (list 1 x y)
 
 ;to work on:
-;hitboxes
-;...
 ;divine move cheat?
+(define (getopposite ptype)
+  (cond [(= ptype 1) 2]
+        [else 1]))
 
 ;render functions
 
@@ -126,9 +130,9 @@
 
 ;renders the precompiled list of amounts of pieces (boardinfo)
 (define (textcount boardinfo)
-    (above (text (string-append "Open spaces on board: " (number->string (first boardinfo))) 18 "black")
-           (text (string-append "Black pieces on board: " (number->string (second boardinfo))) 18 "black")
-           (text (string-append "White pieces on board: " (number->string (third boardinfo))) 18 "black")))
+    (above (text (string-append "Open spaces on board: " (number->string (first boardinfo))) 18 textcolor)
+           (text (string-append "Black pieces on board: " (number->string (second boardinfo))) 18 textcolor)
+           (text (string-append "White pieces on board: " (number->string (third boardinfo))) 18 textcolor)))
 ;!!!
 
 ;previous move marker
@@ -156,7 +160,8 @@
 
 ;higher level render based on model architecture
 (define (render model)
-  (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (last model)))
+  (local [(define game (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (last model)))]
+    (overlay game (rectangle (image-width game) (image-height game) "solid" bgcolor))))
 
 ;/render functions
 
@@ -302,15 +307,9 @@
 ;gui
 (define mgui (new frame% [label "Go"]
                   [width 200]                   
-                  [height 300]))
-(new button% [parent mgui]
-     [enabled #f]
-     [label "# of Lines"])
-(define bcanv (new canvas% [parent mgui]             
-                 [paint-callback              
-                  (lambda (canvas dc)                               
-                    (send dc set-text-foreground "black")
-                    (send dc draw-text "More lines will result in a laggier game." 0 0))]))
+                  [height 200]))
+(define infomsg (new message% [parent mgui]             
+                 [label "More lines will result in a laggier game."]))
 (define gsize (new radio-box% [parent mgui]
                    [label "Number of Lines"]
                    [choices (list "5" "7" "9" "11" "13" "15" "17" "19")]
@@ -322,18 +321,21 @@
                    [max-value 1280]
                    [init-value 512]))
 (define getip (new text-field% [parent mgui]
+                   [init-value "127.0.0.1"]
                    [label "IP Address: "]))
-(define bottompanel (new horizontal-panel% [parent mgui]))
+(define bottompanel (new horizontal-panel% [parent mgui] 
+                         [alignment (list 'center 'center)]))
 
 (new button% [parent bottompanel]             
      [label "Start"]     
      [callback (lambda (button event)                         
-                 (send mgui show #f)
                  (big-bang (gengame 2 (string->number (send gsize 
                                                             get-item-label
                                                             (send gsize get-selection))) (send wsize get-value))
                            (on-mouse mousehandler)
-                           (on-draw render)))])
+                           (on-draw render)
+                           (register (ipcheck (send getip get-value))))
+                 (send mgui show #f))])
 (new button% [parent bottompanel]             
      [label "Cancel"]     
      [callback (lambda (button event)                         
