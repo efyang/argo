@@ -15,7 +15,8 @@
 ;1 - black
 ;2 - white
 ;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
-;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords | pieceinfos <- precalculated coordinates | blocksize, piecesize, turn)
+;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords 
+;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn)
 (define (gengame ptype blocknum gamesize) (list ptype 
                                                 gamesize 
                                                 (- blocknum 1)
@@ -299,54 +300,38 @@
 ;end mouse/hitbox functions
 
 ;gui
-(define gsize 5)
-(define wsize 512)
 (define mgui (new frame% [label "Go"]
                   [width 200]                   
                   [height 300]))
-(define toppanel (new horizontal-panel% [parent mgui]))
-(define ((sets s) btn evt)
-  (set! gsize s)
-  (send canv refresh-now))
-(define ((setw s) btn evt)
-  (set! wsize s)
-  (send canv refresh-now))
-(for ([i (in-range 8)])                        
-  (make-object button% (format "~a" (+ 5 (* 2 i))) toppanel (sets (+ 5 (* 2 i)))))
-(define midpanel (new horizontal-panel% [parent mgui]))
-(new button% [parent midpanel]             
-     [label "Decrease game window size"]     
-     [callback (lambda (button event) 
-                 (set! wsize (max 200 (- wsize 48)))
-                 (send canv refresh-now))])
-(new button% [parent midpanel]             
-     [label "Increase game window size"]     
-     [callback (lambda (button event) 
-                 (set! wsize (min 1280 (+ wsize 48)))
-                 (send canv refresh-now))])
-(define getip (new text-field% [parent mgui]
-                   [label "IP Address: "]))
+(new button% [parent mgui]
+     [enabled #f]
+     [label "# of Lines"])
 (define bcanv (new canvas% [parent mgui]             
                  [paint-callback              
                   (lambda (canvas dc)                               
                     (send dc set-text-foreground "black")
-                    (send dc draw-text "Please keep in mind that more lines will result in a laggier game." 0 0))]))
-(define canv (new canvas% [parent mgui]             
-                 [paint-callback              
-                  (lambda (canvas dc)                               
-                    (send dc set-text-foreground "black")
-                    (send dc draw-text (string-append "Number of lines: " 
-                                                      (number->string gsize) 
-                                                      "        Game window size: " 
-                                                      (number->string wsize)) 0 0))]))
-
+                    (send dc draw-text "More lines will result in a laggier game." 0 0))]))
+(define gsize (new radio-box% [parent mgui]
+                   [label "Number of Lines"]
+                   [choices (list "5" "7" "9" "11" "13" "15" "17" "19")]
+                   [style (list 'horizontal)]))
+(define wsize (new slider%
+                   [parent mgui]
+                   [label "Window Size"]
+                   [min-value 200]
+                   [max-value 1280]
+                   [init-value 512]))
+(define getip (new text-field% [parent mgui]
+                   [label "IP Address: "]))
 (define bottompanel (new horizontal-panel% [parent mgui]))
 
 (new button% [parent bottompanel]             
      [label "Start"]     
      [callback (lambda (button event)                         
                  (send mgui show #f)
-                 (big-bang (gengame 2 gsize wsize)
+                 (big-bang (gengame 2 (string->number (send gsize 
+                                                            get-item-label
+                                                            (send gsize get-selection))) (send wsize get-value))
                            (on-mouse mousehandler)
                            (on-draw render)))])
 (new button% [parent bottompanel]             
