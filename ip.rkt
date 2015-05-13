@@ -12,5 +12,7 @@
         [else #f]))
 
 (define (ip? ipaddr)
-  (cond [(elem #\. (string->list ipaddr)) (allaresame byte? (map string->number (string-split ipaddr ".")))]
+  (cond [(elem #\. (string->list ipaddr)) (local [(define numlst (map string->number (string-split ipaddr ".")))]
+                                            (cond [(string-length numlst 4) (allaresame byte? numlst)]
+                                                  [else #f]))]
         [else #f]))
