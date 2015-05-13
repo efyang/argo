@@ -1,6 +1,7 @@
 #lang racket/gui
 
 (require picturing-programs)
+(require "ip.rkt")
 
 (define linecolor "DarkBlue")
 (define squarecolor "NavajoWhite")
@@ -300,7 +301,6 @@
 ;gui
 (define gsize 5)
 (define wsize 512)
-;(define )
 (define mgui (new frame% [label "Go"]
                   [width 200]                   
                   [height 300]))
@@ -339,8 +339,9 @@
                                                       (number->string gsize) 
                                                       "        Game window size: " 
                                                       (number->string wsize)) 0 0))]))
-(new canvas% [parent mgui])
+
 (define bottompanel (new horizontal-panel% [parent mgui]))
+
 (new button% [parent bottompanel]             
      [label "Start"]     
      [callback (lambda (button event)                         
