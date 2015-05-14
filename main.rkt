@@ -330,15 +330,15 @@
 
 (new button% [parent bottompanel]             
      [label "Start"]   
-     [callback (lambda (button event)                         
+     [callback (lambda (button event) 
+                 (send mgui show #f)
                  (big-bang (gengame 2 (string->number (send gsize 
                                                             get-item-label
                                                             (send gsize get-selection))) 
                                     (send wsize get-value))
                            (on-mouse mousehandler)
                            (on-draw render)
-                           (register (ipcheck (send getip get-value))))
-                 (send mgui show #f))])
+                           (register (ipcheck (send getip get-value)))))])
 (new button% [parent bottompanel]             
      [label "Cancel"]
      [callback (lambda (button event)                         
