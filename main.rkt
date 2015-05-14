@@ -305,24 +305,11 @@
 ;end mouse/hitbox functions
 
 ;gui
-(define mgui (new frame% [label "Go"]
-                  [width 200]                   
-                  [height 400]
-                  [style (list 'float)]))
-(define logopanel (new horizontal-panel% [parent mgui] 
-                       [alignment (list 'center 'center)]
-                       [horiz-margin 118]))
-(define glogo (new canvas% [parent logopanel]
-                   [paint-callback (lambda (canvas dc)
-                                     (send dc draw-bitmap
-                                           (read-bitmap "weiqi.jpg" 
-                                                        'jpeg/alpha
-                                                        ;(make-object color% 0 0 0 0) 
-                                                        #:backing-scale 4)
-                                           0
-                                           0
-                                           ))]))
+(define mgui (new frame% [label "Go"]))
 (define midpanel (new vertical-panel% [parent mgui]))
+(define logomsg (new message% [parent midpanel]             
+                 [label "围棋"]
+                 [font (make-object font% 40 'modern)]))
 (define infomsg (new message% [parent midpanel]             
                  [label "More lines will result in a laggier game."]))
 (define gsize (new radio-box% [parent midpanel]
@@ -346,7 +333,8 @@
      [callback (lambda (button event)                         
                  (big-bang (gengame 2 (string->number (send gsize 
                                                             get-item-label
-                                                            (send gsize get-selection))) (send wsize get-value))
+                                                            (send gsize get-selection))) 
+                                    (send wsize get-value))
                            (on-mouse mousehandler)
                            (on-draw render)
                            (register (ipcheck (send getip get-value))))
