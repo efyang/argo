@@ -307,27 +307,42 @@
 ;gui
 (define mgui (new frame% [label "Go"]
                   [width 200]                   
-                  [height 200]))
-(define infomsg (new message% [parent mgui]             
+                  [height 400]
+                  [style (list 'float)]))
+(define logopanel (new horizontal-panel% [parent mgui] 
+                       [alignment (list 'center 'center)]
+                       [horiz-margin 118]))
+(define glogo (new canvas% [parent logopanel]
+                   [paint-callback (lambda (canvas dc)
+                                     (send dc draw-bitmap
+                                           (read-bitmap "weiqi.jpg" 
+                                                        'jpeg/alpha
+                                                        ;(make-object color% 0 0 0 0) 
+                                                        #:backing-scale 4)
+                                           0
+                                           0
+                                           ))]))
+(define midpanel (new vertical-panel% [parent mgui]))
+(define infomsg (new message% [parent midpanel]             
                  [label "More lines will result in a laggier game."]))
-(define gsize (new radio-box% [parent mgui]
+(define gsize (new radio-box% [parent midpanel]
                    [label "Number of Lines"]
                    [choices (list "5" "7" "9" "11" "13" "15" "17" "19")]
                    [style (list 'horizontal)]))
 (define wsize (new slider%
-                   [parent mgui]
+                   [parent midpanel]
                    [label "Window Size"]
                    [min-value 200]
                    [max-value 1280]
                    [init-value 512]))
-(define getip (new text-field% [parent mgui]
+(define getip (new text-field% [parent midpanel]
                    [init-value "127.0.0.1"]
                    [label "IP Address: "]))
-(define bottompanel (new horizontal-panel% [parent mgui] 
+(define bottompanel (new horizontal-panel% [parent midpanel]
                          [alignment (list 'center 'center)]))
 
 (new button% [parent bottompanel]             
-     [label "Start"]     
+     [label "Start"]   
      [callback (lambda (button event)                         
                  (big-bang (gengame 2 (string->number (send gsize 
                                                             get-item-label
@@ -337,7 +352,7 @@
                            (register (ipcheck (send getip get-value))))
                  (send mgui show #f))])
 (new button% [parent bottompanel]             
-     [label "Cancel"]     
+     [label "Cancel"]
      [callback (lambda (button event)                         
                  (send mgui show #f))])
 (send mgui show #t)
