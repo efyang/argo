@@ -17,6 +17,8 @@
         [(= ptype 2) 1]
         [else ptype]))
 
+;check if opponent pieces are surrounded
+;CHANGE THIS
 (define (surrounded? xc yc padboard doneboard)
   (local [(define padxc (+ x 1))
           (define padyc (+ y 1))
@@ -27,4 +29,5 @@
           (define p3 (list-ref (list-ref (+ padyc 1)) xc))
           (define p4 (list-ref (list-ref yc) xc))]
     (cond [(= optype p1 p2 p3 p4) #t]
+          []
           [else])))
