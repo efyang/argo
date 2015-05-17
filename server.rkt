@@ -84,23 +84,50 @@
                            (replace lst newitem itempos))]
         [else lst]))
 
+;detects and increments each piece accordingly (countpieces helper)
+(define (pcount piece curvals)
+  (cond [(= 0 piece) (list (+ 1 (first curvals)) (second curvals) (third curvals))]
+        [(= 1 piece) (list (first curvals) (+ 1 (second curvals)) (third curvals))]
+        [(= 2 piece) (list (first curvals) (second curvals) (+ 1 (third curvals)))]))
+
+;counts number of black, white, open pieces on the board currently
+(define (countpieces boardmap)
+  (foldl pcount (list 0 0 0) (flatten boardmap)))
+
 ;unistate -> unistate
+;move is (list movetype x y)
 (define (handlemove curstate sender move)
+  ;move
   (local [(define curgame (sendersgame sender (third curstate)))
-          (define p1w (first curgame))
-          (define p2w (second curgame))
-          (define curboard (third curgame))
-          (define curboardsize (fourth curgame))
-          (define curplayer (first move))
-          (define surroundedboard (surroundupdate curplayer (second move) curboard curboardsize))
-          (define updatedgame (p1w p2w surroundedboard curboardsize))
-          (define updmsg (list "updategame" surroundedboard curplayer))]
-    (make-bundle (list (first curstate) 
-                       (second curstate)
-                       (replacenoref (third curstate) curgame updatedgame))
-                 (list (make-mail p1w updmsg)
-                       (make-mail p2w updmsg))
-                 empty)))
+                 (define p1w (first curgame))
+                 (define p2w (second curgame))
+                 (define curboard (third curgame))
+                 (define curboardsize (fourth curgame))
+                 (define curplayer (cond [(equal? p1w sender) 1]
+                                         [else 2]))]
+    (cond [(= (first move) 1)
+           (local [(define surroundedboard (surroundupdate curplayer (rest move) curboard curboardsize))
+                   (define updatedgame (list p1w p2w surroundedboard curboardsize))
+                   (define updmsg (list "updategame" surroundedboard move curplayer))]
+             (make-bundle (list (first curstate) 
+                                (second curstate)
+                                (replacenoref (third curstate) curgame updatedgame))
+                          (cond ;board is full, end game
+                            [(= 0 (first (countpieces updatedgame)))
+                             (list (make-mail p1w updmsg)
+                                   (make-mail p2w updmsg)
+                                   (make-mail p1w (list "endgame"))
+                                   (make-mail p2w (list "endgame")))]
+                            ;not full, update game
+                            [else (list (make-mail p1w updmsg)
+                                        (make-mail p2w updmsg))])
+                          empty))]
+          ;pass
+          [else (local [(define updmsg (list "updategame" curboard move curplayer))]
+                  (make-bundle curstate
+                               (list (make-mail p1w updmsg)
+                                     (make-mail p2w updmsg))
+                               empty))])))
 
 ;message handler
 (define (handlemessage curstate sender msg)
@@ -115,6 +142,12 @@
                                            [else (addnewgame curstate sender (first msginfo))])]
       ;new move
       [(string=? msgtype "newmove") (handlemove curstate sender (first msginfo))]
+      ;add in endgame message later on
+      [(string=? msgtype "endgame") (local [(define sendergame (sendersgame sender (third curstate)))]
+                                      (make-bundle (list (first curstate) (second curstate) (remove sendergame (third curstate)))
+                                                   (list (make-mail (first sendergame) (list "endgame"))
+                                                         (make-mail (second sendergame) (list "endgame")))
+                                                   empty))]
       [else (make-bundle curstate empty empty)])))
 
 (universe (list empty empty empty)

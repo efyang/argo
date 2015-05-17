@@ -9,6 +9,7 @@
 (define textcolor "black")
 (define bgcolor "goldenrod")
 (define titlepart (text "Go" 30 "black"))
+;add in endgame to client
 
 ;message to server is either:
 ;(list "newgame" boardsize)
@@ -30,16 +31,16 @@
 ;1 - black
 ;2 - white
 
-;starttype can be either 
+;starttype/sendstate can be either 
 ;0 - create new game
 ;1 - join game
 ;2 - message has already been sent
 
 ;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
 ;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords 
-;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn, starttype)
+;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn, starttype, endgame?)
 
-(define (gengame ptype blocknum gamesize starttype) (list ptype 
+(define (gengame ptype blocknum gamesize starttype [turn ptype]) (list ptype 
                                                 gamesize 
                                                 (- blocknum 1)
                                                 (basemap (- blocknum 1)) 
@@ -49,8 +50,9 @@
                                                 (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
                                                 (getblocksize gamesize (- blocknum 1))
                                                 (getplen (getblocksize gamesize (- blocknum 1)))
-                                                ptype
-                                                starttype))
+                                                turn
+                                                starttype
+                                                #f))
 ;move is (list mtype xcoord ycoord)
 ;0 - pass (list 0 -200 -200)
 ;1 - set (list 1 x y)
@@ -165,24 +167,30 @@
         [else (circle psize "solid" (make-color 255 255 255 200))]))
 
 ;main render function
-(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn)
-  (cond [(= 0 ptype) (text "Waiting for game..." 18 "black")]
-        [else (place-image (cond [(= turn ptype) (nextmove ptype psize)]
-                                 [else (square 0 "solid" (make-color 0 0 0 0))])
-                           (first approxnew)
-                           (second approxnew)
-                           (above titlepart 
-                                  (place-image (mkpmove psize) 
-                                               (second pmoveinfo) 
-                                               (third pmoveinfo) 
-                                               (overlay (renderpieces boardmap psize bsize) 
-                                                        (genboard gamesize blocknum))) 
-                                  (textcount piecenums)))]))
+(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn endgame?)
+  (local [(define dgame (place-image (cond [(= turn ptype) (nextmove ptype psize)]
+                                           [else (square 0 "solid" (make-color 0 0 0 0))])
+                                     (first approxnew)
+                                     (second approxnew)
+                                     (above titlepart 
+                                            (place-image (mkpmove psize) 
+                                                         (second pmoveinfo) 
+                                                         (third pmoveinfo) 
+                                                         (overlay (renderpieces boardmap psize bsize) 
+                                                                  (genboard gamesize blocknum))) 
+                                            (textcount piecenums))))]
+    (cond [(= 0 ptype) (overlay (text "Waiting for game..." 18 "black") (rectangle (image-width dgame) (image-height dgame) "solid" "white"))]
+          [else dgame])))
+        
 
 ;higher level render based on model architecture
 (define (render model)
-  (local [(define game (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (tenth (rest model))))]
-    (overlay game (rectangle (image-width game) (image-height game) "solid" bgcolor))))
+  ;end game
+  ;FINISH THIS LATER
+  (cond [(last model) (text "Game over." 18 "black")]
+        ;normal game
+        [else (local [(define game (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (tenth (rest model)) (last model)))]
+                (overlay game (rectangle (image-width game) (image-height game) "solid" bgcolor)))]))
 
 ;/render functions
 
@@ -296,36 +304,127 @@
           (define bsize (ninth model))
           (define board (fourth model))
           (define turn (tenth (rest model)))
+          (define pmove (sixth model))
           (define inhit (inhitbox? (+ x bsize) (+ bsize(- y ymodifier)) bsize bsize (+ gamesize bsize) (+ gamesize bsize)))]
-    (cond [(and inhit (= ptype turn)) (cond [(string=? event "move") 
-                        (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))
-                                (define posnvalue (list-ref (list-ref board (fourth gotposn)) (third gotposn)))]
-                            (list (first model) gamesize blocknum board (fifth model) (sixth model) 
-                                  (cond [(= posnvalue 0) gotposn]
-                                        [else (list -200 -200 -200 -200)])
-                                  posnboard bsize (tenth model) turn (last model)))]
-                       [(string=? event "button-down") (local [
-                                                        (define gotposn (approxposn x y gamesize blocknum posnboard bsize))
-                                                        (define replacey (fourth gotposn))
-                                                        (define replacex (third gotposn))
-                                                        (define ptype (first model))
-                                                        (define posnvalue (list-ref (list-ref board replacey) replacex))]
-                                                         (cond [(= posnvalue 0) (list (first model) gamesize blocknum 
-                                                                                      (replace board (replace (list-ref board replacey) ptype replacex) replacey)
-                                                                                      (fifth model) (sixth model) gotposn posnboard bsize (tenth model) turn (last model))]
-                                                               [else (list (first model) gamesize blocknum 
-                                                                           board
-                                                                           (fifth model) (sixth model) (list -200 -200 -200 -200) posnboard bsize (tenth model) turn (last model))]))]
-                       [else model])]
+    (cond [(and inhit (= ptype turn)) 
+           (cond [(string=? event "move") 
+                  (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))
+                          (define posnvalue (list-ref (list-ref board (fourth gotposn)) (third gotposn)))]
+                    (list (first model) gamesize blocknum board (fifth model) (sixth model) 
+                          (cond [(= posnvalue 0) gotposn]
+                                [else (list -200 -200 -200 -200)])
+                          posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model)))]
+                 [(string=? event "button-down") (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))
+                                                         (define replacey (fourth gotposn))
+                                                         (define replacex (third gotposn))
+                                                         (define ptype (first model))
+                                                         (define posnvalue (list-ref (list-ref board replacey) replacex))]
+                                                   (cond [(= posnvalue 0) (list (first model) gamesize blocknum 
+                                                                                (replace board (replace (list-ref board replacey) ptype replacex) replacey)
+                                                                                (fifth model) pmove gotposn posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model))]
+                                                         [else (list (first model) gamesize blocknum 
+                                                                     board
+                                                                     (fifth model) pmove (list -200 -200 -200 -200) posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model))]))]
+                 [else model])]
+          ;pass
+          ;FINISH THIS LATER
+          ;add pass button
+          ;[(string=? event "button-down") model]
           [else model])))
+
+;sends starting message to server
+(define (autosend model)
+  (local [(define sendstate (tenth (rest (rest model))))]
+    (cond
+      ;new game
+      [(= 0 sendstate) (make-package (append (init (init model)) (list 2) (list #f))
+                                     (list "newgame" (third model)))]
+      ;join game
+      [(= 1 sendstate) (make-package (append (init (init model)) (list 2) (list #f))
+                                     (list "joingame"))]
+      ;already sent message before
+      [else model])))
+
+;message from server can be either:
+;(list "newgame" boardsize playernum)
+;or
+;(list "updategame" newboard pmove pplayernum)
+;ptype is player color
+;1 - black
+;2 - white
+;turn is based on player colors
+;0 - not set
+;1 - black
+;2 - white
+#|(define (gengame ptype blocknum gamesize starttype [turn ptype]) (list ptype 
+                                                gamesize 
+                                                (- blocknum 1)
+                                                (basemap (- blocknum 1)) 
+                                                (list 0 0 0) 
+                                                (list 1 -200 -200) 
+                                                (list -200 -200 -200 -200) 
+                                                (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
+                                                (getblocksize gamesize (- blocknum 1))
+                                                (getplen (getblocksize gamesize (- blocknum 1)))
+                                                turn
+                                                starttype))|#
+;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
+;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords 
+;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn, starttype)
+(define (addpiece piececount ptype)
+  (cond [(= 1 ptype) (list (- (first piececount) 1) (+ (second piececount) 1) (third piececount))]
+        [(= 2 ptype) (list (- (first piececount) 1) (second piececount) (+ (third piececount) 1))]
+        [else piececount]))
+
+(define (optype pnum)
+  (cond [(= pnum 1) 2]
+        [else 1]))
+
+(define (handlemessage curstate msg)
+  (local [(define msgtype (first msg))
+          (define msginfo (rest msg))]
+    (cond [(string=? msgtype "newgame") 
+           (gengame (second msginfo)
+                    (first msginfo)
+                    (second curstate)
+                    3
+                    1)]
+          [(string=? msgtype "updategame")
+           (local [(define newboard (first msginfo))
+                   (define move (second msginfo))
+                   (define moveplayer (third msginfo))
+                   (define ptype (first curstate))]
+             (list ptype
+                   (second curstate)
+                   (third curstate)
+                   newboard
+                   (cond [(= 1 (first move)) 
+                          (addpiece (fifth curstate) moveplayer)]
+                         [else (fifth curstate)])
+                   (cond [(not (= moveplayer ptype)) move]
+                         [else (sixth curstate)])
+                   (seventh curstate)
+                   (eighth curstate)
+                   (ninth curstate)
+                   (tenth curstate)
+                   (optype moveplayer)
+                   3
+                   #f))]
+          [(string=? msgtype "endgame") 
+           (stop-with (append (init curstate) (list #t)))]
+          [else curstate])))
+
+
 
 (define (startgo gamesize blocknum ip starttype)
   (big-bang (gengame 0 
                      gamesize 
                      blocknum
                      starttype)
+            (on-tick autosend)
             (on-mouse mousehandler)
             (on-draw render)
+            (on-receive handlemessage)
             (register ip)))
 
 ;checks if the previous move was a pass and if the current move is a pass
