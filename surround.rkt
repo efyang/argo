@@ -1,6 +1,11 @@
 #lang racket
+(provide surroundupdate baseboard)
+
 (define (mklist item num)
   (build-list num (lambda (x) item)))
+
+(define (baseboard size)
+  (mklist (mklist 0 (+ 1 size)) (+ 1 size)))
 
 (define (padlst 2dlst item w h)
   (local [(define vadd (list (mklist item (+ w 2))))
@@ -19,15 +24,21 @@
 
 ;check if opponent pieces are surrounded
 ;CHANGE THIS
-(define (surrounded? xc yc padboard doneboard)
-  (local [(define padxc (+ x 1))
-          (define padyc (+ y 1))
-          (define ptype (list-ref (list-ref padboard padyc) padxc))
-          (define optype (getopposite ptype))
-          (define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))
-          (define p2 (list-ref (list-ref yc) (+ padxc 1)))
-          (define p3 (list-ref (list-ref (+ padyc 1)) xc))
-          (define p4 (list-ref (list-ref yc) xc))]
-    (cond [(= optype p1 p2 p3 p4) #t]
-          []
-          [else])))
+;board -> board
+(define (surroundupdate playernum move board blocknum)
+  (local [(define padboard (padlst board 3 blocknum blocknum))
+          (define doneboard (baseboard blocknum))]
+    board))
+
+;(define (ptsurrounded? xc yc padboard doneboard)
+;  (local [(define padxc (+ x 1))
+;          (define padyc (+ y 1))
+;          (define ptype (list-ref (list-ref padboard padyc) padxc))
+;          (define optype (getopposite ptype))
+;          (define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))
+;          (define p2 (list-ref (list-ref yc) (+ padxc 1)))
+;          (define p3 (list-ref (list-ref (+ padyc 1)) xc))
+;          (define p4 (list-ref (list-ref yc) xc))]
+;    (cond [(= optype p1 p2 p3 p4) #t]
+;          []
+;          [else])))

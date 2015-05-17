@@ -1,7 +1,8 @@
-#lang racket/gui
+#lang racket
 
 (require picturing-programs)
-(require "ip.rkt")
+(provide (all-defined-out))
+
 
 (define linecolor "white")
 (define squarecolor "goldenrod")
@@ -9,6 +10,18 @@
 (define bgcolor "goldenrod")
 (define titlepart (text "Go" 30 "black"))
 
+;message to server is either:
+;(list "newgame" boardsize)
+;or
+;(list "joingame")
+;or
+;(list "newmove" move)
+;move is (list playernum (list x y))
+
+;message from server can be either:
+;(list "newgame" boardsize playernum)
+;or
+;(list "updategame" newboard pmove pplayernum)
 ;ptype is player color
 ;1 - black
 ;2 - white
@@ -146,17 +159,18 @@
 
 ;main render function
 (define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn)
-  (place-image (cond [(= turn ptype) (nextmove ptype psize)]
-                     [else (square 0 "solid" (make-color 0 0 0 0))])
-               (first approxnew)
-               (second approxnew)
-               (above titlepart 
-                      (place-image (mkpmove psize) 
-                                   (second pmoveinfo) 
-                                   (third pmoveinfo) 
-                                   (overlay (renderpieces boardmap psize bsize) 
-                                            (genboard gamesize blocknum))) 
-                      (textcount piecenums))))
+  (cond [(= 0 ptype) (text "Waiting for game..." 18 "black")]
+        [else (place-image (cond [(= turn ptype) (nextmove ptype psize)]
+                                 [else (square 0 "solid" (make-color 0 0 0 0))])
+                           (first approxnew)
+                           (second approxnew)
+                           (above titlepart 
+                                  (place-image (mkpmove psize) 
+                                               (second pmoveinfo) 
+                                               (third pmoveinfo) 
+                                               (overlay (renderpieces boardmap psize bsize) 
+                                                        (genboard gamesize blocknum))) 
+                                  (textcount piecenums)))]))
 
 ;higher level render based on model architecture
 (define (render model)
@@ -218,6 +232,9 @@
 ;gets everything after pos
 (define (ltail lst pos)
   (list-tail lst pos))
+;replace item at lref index with newitem
+(define (replace lst newitem lref)
+  (append (lhead lst (+ lref 1)) (list newitem) (ltail lst (+ lref 1))))
 
 ;cuts the board based on quadrants
 (define (cutboard board quadrant boarddimension)
@@ -263,10 +280,6 @@
           (define filteredboard (reformcuts (cutboard board mquadrant blocknum)))]
     (sortdistances mx my filteredboard)))
 
-;replace item at lref index with newitem
-(define (replace lst newitem lref)
-  (append (lhead lst (+ lref 1)) (list newitem) (ltail lst (+ lref 1))))
-
 ;bit messy, clean up later
 (define (mousehandler model x y event)
   (local [(define ptype (first model))
@@ -299,52 +312,17 @@
                        [else model])]
           [else model])))
 
+(define (startgo gamesize blocknum ip)
+  (big-bang (gengame 0 gamesize 
+                     blocknum)
+            (on-mouse mousehandler)
+            (on-draw render)
+            (register ip)))
+
 ;checks if the previous move was a pass and if the current move is a pass
 ;(define (checkend ))
 
 ;end mouse/hitbox functions
-
-;gui
-(define mgui (new frame% [label "Go"]))
-(define midpanel (new vertical-panel% [parent mgui]))
-(define logomsg (new message% [parent midpanel]             
-                 [label "围棋"]
-                 [font (make-object font% 40 'modern)]))
-(define infomsg (new message% [parent midpanel]             
-                 [label "More lines will result in a laggier game."]))
-(define gsize (new radio-box% [parent midpanel]
-                   [label "Number of Lines"]
-                   [choices (list "5" "7" "9" "11" "13" "15" "17" "19")]
-                   [style (list 'horizontal)]))
-(define wsize (new slider%
-                   [parent midpanel]
-                   [label "Window Size"]
-                   [min-value 200]
-                   [max-value 1280]
-                   [init-value 512]))
-(define getip (new text-field% [parent midpanel]
-                   [init-value "127.0.0.1"]
-                   [label "IP Address: "]))
-(define bottompanel (new horizontal-panel% [parent midpanel]
-                         [alignment (list 'center 'center)]))
-
-(new button% [parent bottompanel]             
-     [label "Start"]   
-     [callback (lambda (button event) 
-                 (send mgui show #f)
-                 (big-bang (gengame 2 (string->number (send gsize 
-                                                            get-item-label
-                                                            (send gsize get-selection))) 
-                                    (send wsize get-value))
-                           (on-mouse mousehandler)
-                           (on-draw render)
-                           (register (ipcheck (send getip get-value)))))])
-(new button% [parent bottompanel]             
-     [label "Cancel"]
-     [callback (lambda (button event)                         
-                 (send mgui show #f))])
-(send mgui show #t)
-;/gui
 
 ;(big-bang (gengame 2 19 200)
 ;          (on-mouse mousehandler)
