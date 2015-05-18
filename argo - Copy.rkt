@@ -17,7 +17,7 @@
                    [label "Window Size"]
                    [min-value 200]
                    [max-value 1280]
-                   [init-value 512]))
+                   [init-value 300]))
 (new message% [parent header]
   [label "What do you want to do?"])
 (define (converted ptype)

@@ -159,7 +159,7 @@
 
 ;previous move marker
 (define (mkpmove psize)
-  (circle (max 0.0001 (- psize 10)) "solid" "gray"))
+  (circle (max 0.0001 (* psize 0.4)) "solid" "gray"))
 
 ;possible next move marker
 (define (nextmove ptype psize)
@@ -357,7 +357,7 @@
 (define (mapmove coords precalc [fprecalc (reformcuts precalc)])
   (cond [(empty? fprecalc) (list 0 0)]
         [(and (= (first coords) (third (first fprecalc)))
-              (= (second coords) (fourth (first fprecalc)))) (list (first (first fprecalc)) (second (first fprecalc)))]
+              (= (second coords) (fourth (first fprecalc)))) (list (first (first fprecalc)) (- (second (first fprecalc)) ymodifier))]
         [else (mapmove coords precalc (rest fprecalc))]))
 
 (define (handlemessage curstate msg)
@@ -399,7 +399,7 @@
 
 
 (define (startgo gamesize blocknum ip starttype)
-  (big-bang (gengame 0 
+  (big-bang (gengame 0  
                      blocknum 
                      gamesize
                      starttype)
