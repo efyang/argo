@@ -70,10 +70,10 @@
      [label "Create"]   
      [callback (lambda (button event) 
                  (send mgui show #f)
-                 (startgo (string->number (send gsize 
+                 (startgo (send wsize get-value)
+                          (string->number (send gsize 
                                                 get-item-label
                                                 (send gsize get-selection)))
-                          (send wsize get-value)
                           (ipcheck (send getip get-value))
                           0))])
 
@@ -81,10 +81,10 @@
      [label "Join"]   
      [callback (lambda (button event) 
                  (send mgui show #f)
-                 (startgo (string->number (send gsize 
+                 (startgo (send wsize get-value)
+                          (string->number (send gsize 
                                                 get-item-label
                                                 (send gsize get-selection)))
-                          (send wsize get-value)
                           (ipcheck (send getip get-value))
                           1))])
 

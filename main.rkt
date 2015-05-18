@@ -44,8 +44,8 @@
                                                 gamesize 
                                                 (- blocknum 1)
                                                 (basemap (- blocknum 1)) 
-                                                (list 0 0 0) 
-                                                (list 1 -200 -200) 
+                                                (list (expt blocknum 2) 0 0) 
+                                                (list 1 100 100) 
                                                 (list -200 -200 -200 -200) 
                                                 (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
                                                 (getblocksize gamesize (- blocknum 1))
@@ -159,7 +159,7 @@
 
 ;previous move marker
 (define (mkpmove psize)
-  (circle (max 0.0001 (- psize 6)) "solid" "gray"))
+  (circle (max 0.0001 (- psize 10)) "solid" "gray"))
 
 ;possible next move marker
 (define (nextmove ptype psize)
@@ -167,6 +167,7 @@
         [else (circle psize "solid" (make-color 255 255 255 200))]))
 
 ;main render function
+;PROBLEM CODE
 (define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn endgame?)
   (local [(define dgame (place-image (cond [(= turn ptype) (nextmove ptype psize)]
                                            [else (square 0 "solid" (make-color 0 0 0 0))])
@@ -319,9 +320,10 @@
                                                          (define replacex (third gotposn))
                                                          (define ptype (first model))
                                                          (define posnvalue (list-ref (list-ref board replacey) replacex))]
-                                                   (cond [(= posnvalue 0) (list (first model) gamesize blocknum 
-                                                                                (replace board (replace (list-ref board replacey) ptype replacex) replacey)
-                                                                                (fifth model) pmove gotposn posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model))]
+                                                   (cond [(= posnvalue 0) (make-package (list (first model) gamesize blocknum 
+                                                                                              (replace board (replace (list-ref board replacey) ptype replacex) replacey)
+                                                                                              (fifth model) pmove gotposn posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model))
+                                                                                        (list "newmove" (list 1 replacex replacey)))]
                                                          [else (list (first model) gamesize blocknum 
                                                                      board
                                                                      (fifth model) pmove (list -200 -200 -200 -200) posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model))]))]
@@ -331,6 +333,7 @@
           ;add pass button
           ;[(string=? event "button-down") model]
           [else model])))
+;end mouse/hitbox functions
 
 ;sends starting message to server
 (define (autosend model)
@@ -341,7 +344,7 @@
                                      (list "newgame" (third model)))]
       ;join game
       [(= 1 sendstate) (make-package (append (init (init model)) (list 2) (list #f))
-                                     (list "joingame"))]
+                                     (list "joingame" (third model)))]
       ;already sent message before
       [else model])))
 
@@ -380,6 +383,12 @@
   (cond [(= pnum 1) 2]
         [else 1]))
 
+(define (mapmove coords precalc [fprecalc (reformcuts precalc)])
+  (cond [(empty? fprecalc) (list 0 0)]
+        [(and (= (first coords) (third (first fprecalc)))
+              (= (second coords) (fourth (first fprecalc)))) (list (first (first fprecalc)) (second (first fprecalc)))]
+        [else (mapmove coords precalc (rest fprecalc))]))
+
 (define (handlemessage curstate msg)
   (local [(define msgtype (first msg))
           (define msginfo (rest msg))]
@@ -389,11 +398,13 @@
                     (second curstate)
                     3
                     1)]
+          ;problem code
           [(string=? msgtype "updategame")
            (local [(define newboard (first msginfo))
                    (define move (second msginfo))
                    (define moveplayer (third msginfo))
-                   (define ptype (first curstate))]
+                   (define ptype (first curstate))
+                   (define gotposns (eighth curstate))]
              (list ptype
                    (second curstate)
                    (third curstate)
@@ -401,10 +412,10 @@
                    (cond [(= 1 (first move)) 
                           (addpiece (fifth curstate) moveplayer)]
                          [else (fifth curstate)])
-                   (cond [(not (= moveplayer ptype)) move]
+                   (cond [(not (= moveplayer ptype)) (append (list (first move)) (mapmove (rest move) gotposns))]
                          [else (sixth curstate)])
                    (seventh curstate)
-                   (eighth curstate)
+                   gotposns
                    (ninth curstate)
                    (tenth curstate)
                    (optype moveplayer)
@@ -418,8 +429,8 @@
 
 (define (startgo gamesize blocknum ip starttype)
   (big-bang (gengame 0 
-                     gamesize 
-                     blocknum
+                     blocknum 
+                     gamesize
                      starttype)
             (on-tick autosend)
             (on-mouse mousehandler)
@@ -427,10 +438,7 @@
             (on-receive handlemessage)
             (register ip)))
 
-;checks if the previous move was a pass and if the current move is a pass
-;(define (checkend ))
 
-;end mouse/hitbox functions
 
 ;(big-bang (gengame 2 19 200)
 ;          (on-mouse mousehandler)

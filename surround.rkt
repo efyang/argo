@@ -22,13 +22,24 @@
         [(= ptype 2) 1]
         [else ptype]))
 
+;gets everything before pos
+(define (lhead lst pos)
+  (reverse (list-tail (reverse lst) (+ (- (length lst) pos) 1))))
+;gets everything after pos
+(define (ltail lst pos)
+  (list-tail lst pos))
+;replace item at lref index with newitem
+(define (replace lst newitem lref)
+  (append (lhead lst (+ lref 1)) (list newitem) (ltail lst (+ lref 1))))
+
 ;check if opponent pieces are surrounded
 ;CHANGE THIS
 ;board -> board
 (define (surroundupdate playernum move board blocknum)
-  (local [(define padboard (padlst board 3 blocknum blocknum))
+  (local [(define addedboard (replace board (replace (list-ref board (second move)) playernum (first move)) (second move)))
+          (define padboard (padlst board 3 blocknum blocknum))
           (define doneboard (baseboard blocknum))]
-    board))
+    addedboard))
 
 ;(define (ptsurrounded? xc yc padboard doneboard)
 ;  (local [(define padxc (+ x 1))

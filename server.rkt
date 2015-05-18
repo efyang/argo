@@ -44,7 +44,7 @@
           (define newboardsize (third gametojoin))]
     (make-bundle (list (first curstate)
                        (remove gametojoin (second curstate))
-                       (append (third curstate) (newrunninggame p1 p2 newboard newboardsize)))
+                       (append (third curstate) (list (newrunninggame p1 p2 newboard newboardsize))))
                  (list (make-mail p1 (list "newgame" newboardsize 1))
                        (make-mail p2 (list "newgame" newboardsize 2)))
                  empty)))
@@ -113,7 +113,7 @@
                                 (second curstate)
                                 (replacenoref (third curstate) curgame updatedgame))
                           (cond ;board is full, end game
-                            [(= 0 (first (countpieces updatedgame)))
+                            [(= 0 (first (countpieces surroundedboard)))
                              (list (make-mail p1w updmsg)
                                    (make-mail p2w updmsg)
                                    (make-mail p1w (list "endgame"))
@@ -135,11 +135,11 @@
           (define msginfo (rest msg))]
     (cond 
       ;new game
-      [(string=? msgtype "newgame") (addnewgame curstate sender (first msginfo))]
+      [(string=? msgtype "newgame") (addnewgame curstate sender (+ 1 (first msginfo)))]
       ;join a game
       [(string=? msgtype "joingame") (cond [(> (length (second curstate)) 0) (addrunninggame curstate sender)]
                                            ;default to new game creation
-                                           [else (addnewgame curstate sender (first msginfo))])]
+                                           [else (addnewgame curstate sender (+ 1 (first msginfo)))])]
       ;new move
       [(string=? msgtype "newmove") (handlemove curstate sender (first msginfo))]
       ;add in endgame message later on
