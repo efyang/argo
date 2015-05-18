@@ -5,7 +5,7 @@
   (build-list num (lambda (x) item)))
 
 (define (baseboard size)
-  (mklist (mklist 0 (+ 1 size)) (+ 1 size)))
+  (mklist (mklist 0 size) size))
 
 (define (padlst 2dlst item w h)
   (local [(define vadd (list (mklist item (+ w 2))))

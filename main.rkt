@@ -17,7 +17,7 @@
 ;(list "joingame")
 ;or
 ;(list "newmove" move)
-;move is (list playernum (list x y))
+;move is (list movetype (list x y))
 
 ;message from server can be either:
 ;(list "newgame" boardsize playernum)
@@ -45,7 +45,7 @@
                                                 (- blocknum 1)
                                                 (basemap (- blocknum 1)) 
                                                 (list (expt blocknum 2) 0 0) 
-                                                (list 1 100 100) 
+                                                (list 1 -200 -200) 
                                                 (list -200 -200 -200 -200) 
                                                 (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
                                                 (getblocksize gamesize (- blocknum 1))
@@ -311,7 +311,7 @@
            (cond [(string=? event "move") 
                   (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))
                           (define posnvalue (list-ref (list-ref board (fourth gotposn)) (third gotposn)))]
-                    (list (first model) gamesize blocknum board (fifth model) (sixth model) 
+                    (list (first model) gamesize blocknum board (fifth model) pmove
                           (cond [(= posnvalue 0) gotposn]
                                 [else (list -200 -200 -200 -200)])
                           posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model)))]
@@ -320,10 +320,7 @@
                                                          (define replacex (third gotposn))
                                                          (define ptype (first model))
                                                          (define posnvalue (list-ref (list-ref board replacey) replacex))]
-                                                   (cond [(= posnvalue 0) (make-package (list (first model) gamesize blocknum 
-                                                                                              (replace board (replace (list-ref board replacey) ptype replacex) replacey)
-                                                                                              (fifth model) pmove gotposn posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model))
-                                                                                        (list "newmove" (list 1 replacex replacey)))]
+                                                   (cond [(= posnvalue 0) (make-package model (list "newmove" (list 1 replacex replacey)))]
                                                          [else (list (first model) gamesize blocknum 
                                                                      board
                                                                      (fifth model) pmove (list -200 -200 -200 -200) posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model))]))]
@@ -348,32 +345,6 @@
       ;already sent message before
       [else model])))
 
-;message from server can be either:
-;(list "newgame" boardsize playernum)
-;or
-;(list "updategame" newboard pmove pplayernum)
-;ptype is player color
-;1 - black
-;2 - white
-;turn is based on player colors
-;0 - not set
-;1 - black
-;2 - white
-#|(define (gengame ptype blocknum gamesize starttype [turn ptype]) (list ptype 
-                                                gamesize 
-                                                (- blocknum 1)
-                                                (basemap (- blocknum 1)) 
-                                                (list 0 0 0) 
-                                                (list 1 -200 -200) 
-                                                (list -200 -200 -200 -200) 
-                                                (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
-                                                (getblocksize gamesize (- blocknum 1))
-                                                (getplen (getblocksize gamesize (- blocknum 1)))
-                                                turn
-                                                starttype))|#
-;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
-;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords 
-;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn, starttype)
 (define (addpiece piececount ptype)
   (cond [(= 1 ptype) (list (- (first piececount) 1) (+ (second piececount) 1) (third piececount))]
         [(= 2 ptype) (list (- (first piececount) 1) (second piececount) (+ (third piececount) 1))]
@@ -437,8 +408,6 @@
             (on-draw render)
             (on-receive handlemessage)
             (register ip)))
-
-
 
 ;(big-bang (gengame 2 19 200)
 ;          (on-mouse mousehandler)
