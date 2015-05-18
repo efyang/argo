@@ -4,6 +4,7 @@ Go game in Racket.
 
 #### Todo:
 
-* more turn based stuff
-* server <-> client communications
+* forfeit on disconnect
+* pass button
+* forfeit button
 * SURROUND FUNCTION
