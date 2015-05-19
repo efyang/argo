@@ -12,6 +12,9 @@
 (define getip (new text-field% [parent header]
                    [init-value "127.0.0.1"]
                    [label "Server IP Address: "]))
+(define getuser (new text-field% [parent header]
+                     [init-value "Nick"]
+                     [label "Username: "]))
 (define wsize (new slider%
                    [parent header]
                    [label "Window Size"]
@@ -75,7 +78,9 @@
                                                 get-item-label
                                                 (send gsize get-selection)))
                           (ipcheck (send getip get-value))
-                          0))])
+                          0
+                          (send getuser get-value))
+                 (send mgui show #t))])
 
 (new button% [parent buttonpanel2]             
      [label "Join"]   
@@ -86,7 +91,9 @@
                                                 get-item-label
                                                 (send gsize get-selection)))
                           (ipcheck (send getip get-value))
-                          1))])
+                          1
+                          (send getuser get-value))
+                 (send mgui show #t))])
 
 (new button% [parent mgui]             
      [label "Cancel"]

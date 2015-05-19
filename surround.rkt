@@ -1,5 +1,5 @@
 #lang racket
-(provide surroundupdate baseboard)
+(provide surroundupdate baseboard getwin mkendgamemsg)
 
 (define (mklist item num)
   (build-list num (lambda (x) item)))
@@ -31,6 +31,23 @@
 ;replace item at lref index with newitem
 (define (replace lst newitem lref)
   (append (lhead lst (+ lref 1)) (list newitem) (ltail lst (+ lref 1))))
+
+;1 is player 1
+;2 is player 2
+;3 is tie
+;(map these to actual usernames later on)
+(define (getwin piecenums)
+  (local [(define p1n (second piecenums))
+          (define p2n (third piecenums))]
+    (cond [(> p1n p2n) 1]
+          [(< p1n p2n) 2]
+          [else 3])))
+
+;creates the message based on message type and usernames
+(define (mkendgamemsg msgtype p1u p2u)
+  (cond [(= msgtype 1) (list (string-append p1u " (Black) beat ") (string-append p2u "(White)."))]
+        [(= msgtype 2) (list (string-append p2u " (White) beat ") (string-append p1u "(Black)."))]
+        [else (string-append p1u " (Black) tied with ") (string-append p2u "(White).")]))
 
 ;check if opponent pieces are surrounded
 ;CHANGE THIS

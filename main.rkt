@@ -20,6 +20,7 @@
 ;move is (list movetype (list x y))
 
 ;message from server can be either:
+;(list "endgame" endgametext)
 ;(list "newgame" boardsize playernum)
 ;or
 ;(list "updategame" newboard pmove pplayernum)
@@ -38,7 +39,7 @@
 
 ;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
 ;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords 
-;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn, starttype, endgame?)
+;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn, starttype, (endgame?,endgamemsg))
 
 (define (gengame ptype blocknum gamesize starttype [turn ptype]) (list ptype 
                                                 gamesize 
@@ -52,7 +53,7 @@
                                                 (getplen (getblocksize gamesize (- blocknum 1)))
                                                 turn
                                                 starttype
-                                                #f))
+                                                (list #f "Game Over." "")))
 ;move is (list mtype xcoord ycoord)
 ;0 - pass (list 0 -200 -200)
 ;1 - set (list 1 x y)
@@ -168,7 +169,7 @@
 
 ;main render function
 ;PROBLEM CODE
-(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn endgame?)
+(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn)
   (local [(define dgame (place-image (cond [(= turn ptype) (nextmove ptype psize)]
                                            [else (square 0 "solid" (make-color 0 0 0 0))])
                                      (first approxnew)
@@ -180,7 +181,7 @@
                                                          (overlay (renderpieces boardmap psize bsize) 
                                                                   (genboard gamesize blocknum))) 
                                             (textcount piecenums))))]
-    (cond [(= 0 ptype) (overlay (text "Waiting for game..." 18 "black") (rectangle (image-width dgame) (image-height dgame) "solid" "white"))]
+    (cond [(= 0 ptype) (overlay (text "Waiting for a game..." 18 "black") (rectangle (image-width dgame) (image-height dgame) "solid" "white"))]
           [else dgame])))
         
 
@@ -188,9 +189,10 @@
 (define (render model)
   ;end game
   ;FINISH THIS LATER
-  (cond [(last model) (text "Game over." 18 "black")]
+  (cond [(first (last model)) (above (text (second (last model)) 18 "black")
+                                     (text (third (last model)) 18 "black"))]
         ;normal game
-        [else (local [(define game (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (tenth (rest model)) (last model)))]
+        [else (local [(define game (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (tenth (rest model))))]
                 (overlay game (rectangle (image-width game) (image-height game) "solid" bgcolor)))]))
 
 ;/render functions
@@ -323,7 +325,8 @@
                                                    (cond [(= posnvalue 0) (make-package model (list "newmove" (list 1 replacex replacey)))]
                                                          [else (list (first model) gamesize blocknum 
                                                                      board
-                                                                     (fifth model) pmove (list -200 -200 -200 -200) posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model))]))]
+                                                                     (fifth model) pmove (list -200 -200 -200 -200) posnboard bsize (tenth model) 
+                                                                     turn (tenth (rest (rest model))) (last model))]))]
                  [else model])]
           ;pass
           ;FINISH THIS LATER
@@ -337,10 +340,10 @@
   (local [(define sendstate (tenth (rest (rest model))))]
     (cond
       ;new game
-      [(= 0 sendstate) (make-package (append (init (init model)) (list 2) (list #f))
+      [(= 0 sendstate) (make-package (append (init (init model)) (list 2) (list (list #f "Game Over." "")))
                                      (list "newgame" (third model)))]
       ;join game
-      [(= 1 sendstate) (make-package (append (init (init model)) (list 2) (list #f))
+      [(= 1 sendstate) (make-package (append (init (init model)) (list 2) (list (list #f "Game Over." "")))
                                      (list "joingame" (third model)))]
       ;already sent message before
       [else model])))
@@ -369,7 +372,6 @@
                     (second curstate)
                     3
                     1)]
-          ;problem code
           [(string=? msgtype "updategame")
            (local [(define newboard (first msginfo))
                    (define move (second msginfo))
@@ -391,14 +393,14 @@
                    (tenth curstate)
                    (optype moveplayer)
                    3
-                   #f))]
+                   (list #f "Game Over." "")))]
           [(string=? msgtype "endgame") 
-           (stop-with (append (init curstate) (list #t)))]
+           (stop-with (append (init curstate) (list (append (list #t) msginfo))))]
           [else curstate])))
 
 
 
-(define (startgo gamesize blocknum ip starttype)
+(define (startgo gamesize blocknum ip starttype username)
   (big-bang (gengame 0  
                      blocknum 
                      gamesize
@@ -407,7 +409,8 @@
             (on-mouse mousehandler)
             (on-draw render)
             (on-receive handlemessage)
-            (register ip)))
+            (register ip)
+            (name username)))
 
 ;(big-bang (gengame 2 19 200)
 ;          (on-mouse mousehandler)

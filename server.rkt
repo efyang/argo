@@ -108,20 +108,30 @@
     (cond [(= (first move) 1)
            (local [(define surroundedboard (surroundupdate curplayer (rest move) curboard curboardsize))
                    (define updatedgame (list p1w p2w surroundedboard curboardsize))
-                   (define updmsg (list "updategame" surroundedboard move curplayer))]
-             (make-bundle (list (first curstate) 
+                   (define updmsg (list "updategame" surroundedboard move curplayer))
+                   (define pnums (countpieces surroundedboard))]
+             ;board is full, end game
+             (cond [(= 0 (first pnums))
+                   (local [(define endtype (getwin pnums))
+                           (define p1u (iworld-name p1w))
+                           (define p2u (iworld-name p2w))
+                           (define endmsg (mkendgamemsg endtype p1u p2u))]
+                     (make-bundle (list (first curstate) 
+                                (second curstate)
+                                (remove curgame (third curstate)))
+                                (list (make-mail p1w updmsg)
+                                      (make-mail p2w updmsg)
+                                      (make-mail p1w (list "endgame" (first endmsg) (second endmsg)))
+                                      (make-mail p2w (list "endgame" (first endmsg) (second endmsg))))
+                                ;(list p1w p2w)
+                                empty
+                                ))]
+                   [else (make-bundle (list (first curstate) 
                                 (second curstate)
                                 (replacenoref (third curstate) curgame updatedgame))
-                          (cond ;board is full, end game
-                            [(= 0 (first (countpieces surroundedboard)))
-                             (list (make-mail p1w updmsg)
-                                   (make-mail p2w updmsg)
-                                   (make-mail p1w (list "endgame"))
-                                   (make-mail p2w (list "endgame")))]
-                            ;not full, update game
-                            [else (list (make-mail p1w updmsg)
-                                        (make-mail p2w updmsg))])
-                          empty))]
+                                (list (make-mail p1w updmsg)
+                                      (make-mail p2w updmsg))
+                                empty)]))]
           ;pass
           [else (local [(define updmsg (list "updategame" curboard move curplayer))]
                   (make-bundle curstate
@@ -143,13 +153,46 @@
       ;new move
       [(string=? msgtype "newmove") (handlemove curstate sender (first msginfo))]
       ;add in endgame message later on
-      [(string=? msgtype "endgame") (local [(define sendergame (sendersgame sender (third curstate)))]
-                                      (make-bundle (list (first curstate) (second curstate) (remove sendergame (third curstate)))
-                                                   (list (make-mail (first sendergame) (list "endgame"))
-                                                         (make-mail (second sendergame) (list "endgame")))
-                                                   empty))]
+      ;on double pass
+      [(string=? msgtype "endgame") (local [(define sendergame (sendersgame sender (third curstate)))
+                                            (define pnums (countpieces (third sendergame)))
+                                            (define p1u (iworld-name (first sendergame)))
+                                            (define p2u (iworld-name (second sendergame)))
+                                            (define endtype (getwin pnums))
+                                            (define endmsg (mkendgamemsg endtype p1u p2u))]
+                                      (make-bundle (list (first curstate) 
+                                                         (second curstate) 
+                                                         (remove sendergame (third curstate)))
+                                                   (list (make-mail (first sendergame) (list "endgame" (first endmsg) (second endmsg)))
+                                                         (make-mail (second sendergame) (list "endgame" (first endmsg) (second endmsg))))
+                                                   ;(list (first sendergame) (second sendergame))
+                                                   empty
+                                                   ))]
       [else (make-bundle curstate empty empty)])))
+
+(define (getop t)
+  (cond [(string-ci=? t "white") "Black"]
+        [else "White"]))
+;removes and ends the disconnector's game
+(define (endremove curstate disconnector)
+  (local [(define curgame (sendersgame disconnector (third curstate)))
+          (define remainworld (cond [(equal? disconnector (first curgame)) (list "White" (second curgame))]
+                                    [else (list "Black" (first curgame))]))
+          (define fuser (iworld-name disconnector))
+          (define ruser (iworld-name (second remainworld)))
+          (define fusert (getop (first remainworld)))
+          (define rusert (first remainworld))]
+    (make-bundle (list (first curstate)
+                       (second curstate)
+                       (remove curgame (third curstate)))
+                 (list (make-mail (second remainworld) (list "endgame" 
+                                                             (string-append fuser " (" fusert ") has forfeited,")
+                                                             (string-append ruser " (" rusert ") wins."))))
+                 ;(list (first curgame) (second curgame))
+                 empty
+                 )))
 
 (universe (list empty empty empty)
           (on-new newworld)
-          (on-msg handlemessage))
+          (on-msg handlemessage)
+          (on-disconnect endremove))
