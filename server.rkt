@@ -94,6 +94,28 @@
 (define (countpieces boardmap)
   (foldl pcount (list 0 0 0) (flatten boardmap)))
 
+;sets the game as ended
+(define (setend game)
+  (list (first game)
+        (second game)
+        (third game)
+        (fourth game)
+        #t))
+
+;returns worlds to disconnect from the game
+(define (endgdisco game)
+  (cond [(fifth game) (list (first game) (second game))]
+        [else empty]))
+
+;disconnects any ended games' worlds
+;runs on tick
+(define (endg model)
+  (local [(define games (third model))
+          (define dworlds (flatten (map endgdisco games)))]
+    (make-bundle model
+                 empty
+                 dworlds)))
+
 ;unistate -> unistate
 ;move is (list movetype x y)
 (define (handlemove curstate sender move)
@@ -118,7 +140,8 @@
                            (define endmsg (mkendgamemsg endtype p1u p2u))]
                      (make-bundle (list (first curstate) 
                                 (second curstate)
-                                (remove curgame (third curstate)))
+                                (replacenoref (third curstate) curgame 
+                                              (setend curgame)))
                                 (list (make-mail p1w updmsg)
                                       (make-mail p2w updmsg)
                                       (make-mail p1w (list "endgame" (first endmsg) (second endmsg)))
@@ -162,7 +185,8 @@
                                             (define endmsg (mkendgamemsg endtype p1u p2u))]
                                       (make-bundle (list (first curstate) 
                                                          (second curstate) 
-                                                         (remove sendergame (third curstate)))
+                                                         (replacenoref (third curstate) sendergame 
+                                                                      (setend sendergame)))
                                                    (list (make-mail (first sendergame) (list "endgame" (first endmsg) (second endmsg)))
                                                          (make-mail (second sendergame) (list "endgame" (first endmsg) (second endmsg))))
                                                    ;(list (first sendergame) (second sendergame))
@@ -184,7 +208,8 @@
           (define rusert (first remainworld))]
     (make-bundle (list (first curstate)
                        (second curstate)
-                       (remove curgame (third curstate)))
+                       (replacenoref (third curstate) curgame 
+                                     (setend curgame)))
                  (list (make-mail (second remainworld) (list "endgame" 
                                                              (string-append fuser " (" fusert ") has forfeited,")
                                                              (string-append ruser " (" rusert ") wins."))))
@@ -195,4 +220,5 @@
 (universe (list empty empty empty)
           (on-new newworld)
           (on-msg handlemessage)
-          (on-disconnect endremove))
+          (on-disconnect endremove)
+          (on-tick endg))
