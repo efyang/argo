@@ -6,7 +6,7 @@
 
 ;server model is (list (list unknownworlds) (list unjoinedmodels) (list runninggames))
 ;unjoinedmodel is (list owner board boardsize)
-;runninggame is (list p1 p2 board boardsize)
+;runninggame is (list p1 p2 board boardsize endgame?)
 
 
 ;appends new world to unknown list
@@ -32,7 +32,7 @@
 
 ;makes a new running game
 (define (newrunninggame p1 p2 board boardsize)
-  (list p1 p2 board boardsize))
+  (list p1 p2 board boardsize #f))
 
 ;unistate -> unistate
 ;removes the first unjoinedmodel from the queue, makes a new running game
@@ -107,7 +107,7 @@
                                          [else 2]))]
     (cond [(= (first move) 1)
            (local [(define surroundedboard (surroundupdate curplayer (rest move) curboard curboardsize))
-                   (define updatedgame (list p1w p2w surroundedboard curboardsize))
+                   (define updatedgame (list p1w p2w surroundedboard curboardsize #f))
                    (define updmsg (list "updategame" surroundedboard move curplayer))
                    (define pnums (countpieces surroundedboard))]
              ;board is full, end game
