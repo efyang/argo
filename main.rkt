@@ -180,9 +180,20 @@
                                                          (third pmoveinfo) 
                                                          (overlay (renderpieces boardmap psize bsize) 
                                                                   (genboard gamesize blocknum))) 
-                                            (textcount piecenums))))]
-    (cond [(= 0 ptype) (overlay (text "Waiting for a game..." 18 "black") (rectangle (image-width dgame) (image-height dgame) "solid" "white"))]
-          [else dgame])))
+                                            (textcount piecenums))))
+          (define pady 20)
+          (define buttonw (/ (image-width dgame) 4))
+          (define buttonh (/ (image-height dgame) 10))
+          (define pady2 10)
+          (define basebutton (overlay (rectangle buttonw buttonh "outline" linecolor)
+                                      (rectangle buttonw buttonh "solid" squarecolor)))]
+    (cond [(= 0 ptype) (overlay (text "Waiting for a game..." 18 "black") (rectangle (image-width dgame) (+ pady buttonh pady2 (image-height dgame)) "solid" "white"))]
+          [else (above dgame 
+                       (rectangle 0 pady "solid" (make-color 0 0 0 0))
+                       (beside (overlay (text "Pass" 18 linecolor) basebutton)
+                               (rectangle buttonw buttonh "solid" (make-color 0 0 0 0))
+                               (overlay (text "Forfeit" 18 linecolor) basebutton))
+                       (rectangle 0 pady2 "solid" (make-color 0 0 0 0)))])))
         
 
 ;higher level render based on model architecture
