@@ -192,6 +192,9 @@
                                                    ;(list (first sendergame) (second sendergame))
                                                    empty
                                                    ))]
+      [(string=? msgtype "endgrec") (make-bundle curstate
+                                                empty
+                                                (list sender))]
       [else (make-bundle curstate empty empty)])))
 
 (define (getop t)
@@ -221,4 +224,5 @@
           (on-new newworld)
           (on-msg handlemessage)
           (on-disconnect endremove)
-          (on-tick endg))
+          ;(on-tick endg)
+          )

@@ -336,7 +336,7 @@
 ;end mouse/hitbox functions
 
 ;sends starting message to server
-(define (autosend model)
+(define (autosendc model)
   (local [(define sendstate (tenth (rest (rest model))))]
     (cond
       ;new game
@@ -346,6 +346,9 @@
       [(= 1 sendstate) (make-package (append (init (init model)) (list 2) (list (list #f "Game Over." "")))
                                      (list "joingame" (third model)))]
       ;already sent message before
+      #|[else (cond [(first (last model))
+                   (stop-with model)]
+                  [else model])]|#
       [else model])))
 
 (define (addpiece piececount ptype)
@@ -395,7 +398,8 @@
                    3
                    (list #f "Game Over." "")))]
           [(string=? msgtype "endgame") 
-           (stop-with (append (init curstate) (list (append (list #t) msginfo))))]
+           (make-package (stop-with (append (init curstate) (list (append (list #t) msginfo))))
+                         (list "endgrec"))]
           [else curstate])))
 
 
@@ -405,7 +409,7 @@
                      blocknum 
                      gamesize
                      starttype)
-            (on-tick autosend)
+            (on-tick autosendc)
             (on-mouse mousehandler)
             (on-draw render)
             (on-receive handlemessage)
