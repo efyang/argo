@@ -175,8 +175,12 @@
                                            [else (addnewgame curstate sender (+ 1 (first msginfo)))])]
       ;new move
       [(string=? msgtype "newmove") (handlemove curstate sender (first msginfo))]
-      ;add in endgame message later on
-      ;on double pass
+      
+      ;forfeit message 
+      ;WORK ON THIS
+      [(string=? msgtype "forfeit") curstate]
+      
+      ;endgame message
       [(string=? msgtype "endgame") (local [(define sendergame (sendersgame sender (third curstate)))
                                             (define pnums (countpieces (third sendergame)))
                                             (define p1u (iworld-name (first sendergame)))

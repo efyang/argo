@@ -8,7 +8,8 @@
 (define squarecolor "goldenrod")
 (define textcolor "black")
 (define bgcolor "goldenrod")
-(define titlepart (text "Go" 30 "black"))
+(define bpad 15)
+(define titlepart (above (rectangle 0 bpad "solid" (make-color 0 0 0 0)) (text "Go" 30 "black")))
 ;add in endgame to client
 
 ;message to server is either:
@@ -39,21 +40,22 @@
 
 ;main game model is (list ptype gamesize blocknum boardmap piecenums pmoveinfo <- previous move 
 ;| approxnew <- new position based on proximity hover (not permanent), both list and draw coords 
-;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn, starttype, (endgame?,endgamemsg))
+;| pieceinfos <- precalculated coordinates | blocksize, piecesize, turn, starttype, (endgame?,endgamemsg), buttoninfo)
+;buttoninfo is (list gamewidth gameheight buttonwidth buttonheight)
 
-(define (gengame ptype blocknum gamesize starttype [turn ptype]) (list ptype 
-                                                gamesize 
-                                                (- blocknum 1)
-                                                (basemap (- blocknum 1)) 
-                                                (list (expt blocknum 2) 0 0) 
-                                                (list 1 -200 -200) 
-                                                (list -200 -200 -200 -200) 
-                                                (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
-                                                (getblocksize gamesize (- blocknum 1))
-                                                (getplen (getblocksize gamesize (- blocknum 1)))
-                                                turn
-                                                starttype
-                                                (list #f "Game Over." "")))
+(define (gengame ptype blocknum gamesize starttype [turn ptype]) (getbinfo (list ptype 
+                                                                                 gamesize 
+                                                                                 (- blocknum 1)
+                                                                                 (basemap (- blocknum 1)) 
+                                                                                 (list (expt blocknum 2) 0 0) 
+                                                                                 (list 1 -10000 -10000) 
+                                                                                 (list -200 -200 -200 -200) 
+                                                                                 (getposns (basemap (- blocknum 1)) (- blocknum 1)(getblocksize gamesize (- blocknum 1)))
+                                                                                 (getblocksize gamesize (- blocknum 1))
+                                                                                 (getplen (getblocksize gamesize (- blocknum 1)))
+                                                                                 turn
+                                                                                 starttype
+                                                                                 (list #f "Game Over." ""))))
 ;move is (list mtype xcoord ycoord)
 ;0 - pass (list 0 -200 -200)
 ;1 - set (list 1 x y)
@@ -168,8 +170,39 @@
         [else (circle psize "solid" (make-color 255 255 255 200))]))
 
 ;main render function
-;PROBLEM CODE
-(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn)
+(define (mainrender ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn binfo)
+  (local [(define dgame (place-image (cond [(= turn ptype) (nextmove ptype psize)]
+                                           [else (square 0 "solid" (make-color 0 0 0 0))])
+                                     (first approxnew)
+                                     (second approxnew)
+                                     (above titlepart 
+                                            (cond [(and (= (first pmoveinfo) 1) (< 0 (second pmoveinfo)) (< 0 (third pmoveinfo)))
+                                                   (place-image (mkpmove psize) 
+                                                                (second pmoveinfo) 
+                                                                (third pmoveinfo) 
+                                                                (overlay (renderpieces boardmap psize bsize) 
+                                                                         (genboard gamesize blocknum)))]
+                                                  [else (overlay (renderpieces boardmap psize bsize) 
+                                                                 (genboard gamesize blocknum))])
+                                            (textcount piecenums))))
+          (define pady bpad)
+          (define buttonw (third binfo))
+          (define buttonh (fourth binfo))
+          (define basebutton (overlay (rectangle buttonw buttonh "outline" linecolor)
+                                      (rectangle buttonw buttonh "solid" squarecolor)))]
+    (cond [(= 0 ptype) (overlay (text "Waiting for a game..." 18 "black") 
+                                (rectangle (image-width dgame) (+ pady buttonh pady (image-height dgame)) "solid" "white"))]
+          [else (above dgame 
+                       (rectangle 0 pady "solid" (make-color 0 0 0 0))
+                       (cond [(= turn ptype)
+                              (beside (overlay (text "Pass" 18 linecolor) basebutton)
+                                      (rectangle buttonw buttonh "solid" (make-color 0 0 0 0))
+                                      (overlay (text "Forfeit" 18 linecolor) basebutton))]
+                             [else (rectangle (* 3 buttonw) buttonh "solid" (make-color 0 0 0 0))])
+                       (rectangle 0 pady "solid" (make-color 0 0 0 0)))])))
+
+;gets button sizes (based on prerender)
+(define (getbuttoninfo ptype gamesize blocknum boardmap piecenums pmoveinfo approxnew precalcposns bsize psize turn)
   (local [(define dgame (place-image (cond [(= turn ptype) (nextmove ptype psize)]
                                            [else (square 0 "solid" (make-color 0 0 0 0))])
                                      (first approxnew)
@@ -181,29 +214,28 @@
                                                          (overlay (renderpieces boardmap psize bsize) 
                                                                   (genboard gamesize blocknum))) 
                                             (textcount piecenums))))
-          (define pady 20)
+          (define pady bpad)
           (define buttonw (/ (image-width dgame) 4))
           (define buttonh (/ (image-height dgame) 10))
-          (define pady2 10)
           (define basebutton (overlay (rectangle buttonw buttonh "outline" linecolor)
                                       (rectangle buttonw buttonh "solid" squarecolor)))]
-    (cond [(= 0 ptype) (overlay (text "Waiting for a game..." 18 "black") (rectangle (image-width dgame) (+ pady buttonh pady2 (image-height dgame)) "solid" "white"))]
-          [else (above dgame 
-                       (rectangle 0 pady "solid" (make-color 0 0 0 0))
-                       (beside (overlay (text "Pass" 18 linecolor) basebutton)
-                               (rectangle buttonw buttonh "solid" (make-color 0 0 0 0))
-                               (overlay (text "Forfeit" 18 linecolor) basebutton))
-                       (rectangle 0 pady2 "solid" (make-color 0 0 0 0)))])))
-        
+    (list (image-width dgame) (image-height dgame) buttonw buttonh)))
 
+(define (getbinfo model)
+  (append model (list (getbuttoninfo (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (tenth (rest model))))))
+       
+(define (thirteenth x)
+  (tenth (rest (rest (rest x)))))
+(define (fourteenth x)
+  (thirteenth (rest x)))
 ;higher level render based on model architecture
 (define (render model)
   ;end game
   ;FINISH THIS LATER
-  (cond [(first (last model)) (above (text (second (last model)) 18 "black")
-                                     (text (third (last model)) 18 "black"))]
+  (cond [(first (thirteenth model)) (above (text (second (thirteenth model)) 18 "black")
+                                     (text (third (thirteenth model)) 18 "black"))]
         ;normal game
-        [else (local [(define game (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (tenth (rest model))))]
+        [else (local [(define game (mainrender (first model) (second model) (third model) (fourth model) (fifth model) (sixth model) (seventh model) (eighth model) (ninth model) (tenth model) (tenth (rest model)) (last model)))]
                 (overlay game (rectangle (image-width game) (image-height game) "solid" bgcolor)))]))
 
 ;/render functions
@@ -319,7 +351,8 @@
           (define board (fourth model))
           (define turn (tenth (rest model)))
           (define pmove (sixth model))
-          (define inhit (inhitbox? (+ x bsize) (+ bsize(- y ymodifier)) bsize bsize (+ gamesize bsize) (+ gamesize bsize)))]
+          (define inhit (inhitbox? (+ x bsize) (+ bsize(- y ymodifier)) bsize bsize (+ gamesize bsize) (+ gamesize bsize)))
+          (define binfo (last model))]
     (cond [(and inhit (= ptype turn)) 
            (cond [(string=? event "move") 
                   (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))
@@ -327,7 +360,7 @@
                     (list (first model) gamesize blocknum board (fifth model) pmove
                           (cond [(= posnvalue 0) gotposn]
                                 [else (list -200 -200 -200 -200)])
-                          posnboard bsize (tenth model) turn (tenth (rest (rest model))) (last model)))]
+                          posnboard bsize (tenth model) turn (tenth (rest (rest model))) (thirteenth model) (last model)))]
                  [(string=? event "button-down") (local [(define gotposn (approxposn x y gamesize blocknum posnboard bsize))
                                                          (define replacey (fourth gotposn))
                                                          (define replacex (third gotposn))
@@ -337,12 +370,29 @@
                                                          [else (list (first model) gamesize blocknum 
                                                                      board
                                                                      (fifth model) pmove (list -200 -200 -200 -200) posnboard bsize (tenth model) 
-                                                                     turn (tenth (rest (rest model))) (last model))]))]
+                                                                     turn (tenth (rest (rest model))) (thirteenth model) (last model))]))]
                  [else model])]
           ;pass
           ;FINISH THIS LATER
-          ;add pass button
-          ;[(string=? event "button-down") model]
+          ;pass and forfeit buttons
+          [(and (= ptype turn) (string=? event "button-down")) (local [(define binfo (last model))
+                                                  (define imgw (first binfo))
+                                                  (define imgh (second binfo))
+                                                  (define bw (third binfo))
+                                                  (define bh (fourth binfo))
+                                                  (define starty (+ imgh bpad))
+                                                  (define startx (- (/ imgw 2) (* 1.5 bw)))
+                                                  (define startx2 (+ (/ imgw 2) (/ bw 2)))]
+                                            (cond 
+                                              ;pass button
+                                              [(inhitbox? x y startx starty bw bh) (make-package model (list "newmove" (list 0 -10000 -10000)))]
+                                              ;forfeit button
+                                              [(inhitbox? x y startx2 starty bw bh) (make-package model (list "forfeit"))]
+                                              [else model]))
+                                          #|;x, y , hitbox corner x, hitbox corner y, hitbox width, hitbox height -> bool 
+                                          (define (inhitbox? x y hx hy hw hh)|#
+                                          ;model
+                                          ]
           [else model])))
 ;end mouse/hitbox functions
 
@@ -351,10 +401,10 @@
   (local [(define sendstate (tenth (rest (rest model))))]
     (cond
       ;new game
-      [(= 0 sendstate) (make-package (append (init (init model)) (list 2) (list (list #f "Game Over." "")))
+      [(= 0 sendstate) (make-package (append (init (init (init model))) (list 2) (list (list #f "Game Over." "") (last model)))
                                      (list "newgame" (third model)))]
       ;join game
-      [(= 1 sendstate) (make-package (append (init (init model)) (list 2) (list (list #f "Game Over." "")))
+      [(= 1 sendstate) (make-package (append (init (init (init model))) (list 2) (list (list #f "Game Over." "") (last model)))
                                      (list "joingame" (third model)))]
       ;already sent message before
       #|[else (cond [(first (last model))
@@ -407,9 +457,10 @@
                    (tenth curstate)
                    (optype moveplayer)
                    3
-                   (list #f "Game Over." "")))]
+                   (list #f "Game Over." "")
+                   (last curstate)))]
           [(string=? msgtype "endgame") 
-           (make-package (stop-with (append (init curstate) (list (append (list #t) msginfo))))
+           (make-package (stop-with (append (init (init curstate)) (list (append (list #t) msginfo) (last curstate))))
                          (list "endgrec"))]
           [else curstate])))
 
