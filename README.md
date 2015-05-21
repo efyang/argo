@@ -4,5 +4,5 @@ Go game in Racket.
 
 #### Todo:
 
-* Button hitboxes
+* Fix endgame message communications
 * SURROUND FUNCTION
