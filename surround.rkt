@@ -47,7 +47,7 @@
 (define (mkendgamemsg msgtype p1u p2u)
   (cond [(= msgtype 1) (list (string-append p1u " (Black) beat ") (string-append p2u "(White)."))]
         [(= msgtype 2) (list (string-append p2u " (White) beat ") (string-append p1u "(Black)."))]
-        [else (string-append p1u " (Black) tied with ") (string-append p2u "(White).")]))
+        [else (list (string-append p1u " (Black) tied with ") (string-append p2u "(White)."))]))
 
 ;check if opponent pieces are surrounded
 ;CHANGE THIS

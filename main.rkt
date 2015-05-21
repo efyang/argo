@@ -385,7 +385,8 @@
                                                   (define startx2 (+ (/ imgw 2) (/ bw 2)))]
                                             (cond 
                                               ;pass button
-                                              [(inhitbox? x y startx starty bw bh) (make-package model (list "newmove" (list 0 -10000 -10000)))]
+                                              [(inhitbox? x y startx starty bw bh) (cond [(= (first pmove) 0) (make-package model (list "endgame"))]
+                                                                                         [else (make-package model (list "newmove" (list 0 -10000 -10000)))])]
                                               ;forfeit button
                                               [(inhitbox? x y startx2 starty bw bh) (make-package model (list "forfeit"))]
                                               [else model]))

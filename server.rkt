@@ -178,7 +178,7 @@
       
       ;forfeit message 
       ;WORK ON THIS
-      [(string=? msgtype "forfeit") curstate]
+      [(string=? msgtype "forfeit") (endremove curstate sender #t)]
       
       ;endgame message
       [(string=? msgtype "endgame") (local [(define sendergame (sendersgame sender (third curstate)))
@@ -193,7 +193,6 @@
                                                                       (setend sendergame)))
                                                    (list (make-mail (first sendergame) (list "endgame" (first endmsg) (second endmsg)))
                                                          (make-mail (second sendergame) (list "endgame" (first endmsg) (second endmsg))))
-                                                   ;(list (first sendergame) (second sendergame))
                                                    empty
                                                    ))]
       [(string=? msgtype "endgrec") (make-bundle curstate
@@ -205,21 +204,24 @@
   (cond [(string-ci=? t "white") "Black"]
         [else "White"]))
 ;removes and ends the disconnector's game
-(define (endremove curstate disconnector)
+(define (endremove curstate disconnector [legitforfeit #f])
   (local [(define curgame (sendersgame disconnector (third curstate)))
           (define remainworld (cond [(equal? disconnector (first curgame)) (list "White" (second curgame))]
                                     [else (list "Black" (first curgame))]))
           (define fuser (iworld-name disconnector))
           (define ruser (iworld-name (second remainworld)))
           (define fusert (getop (first remainworld)))
-          (define rusert (first remainworld))]
+          (define rusert (first remainworld))
+          (define endmsg (list "endgame" 
+                               (string-append fuser " (" fusert ") has forfeited,")
+                               (string-append ruser " (" rusert ") wins.")))]
     (make-bundle (list (first curstate)
                        (second curstate)
                        (replacenoref (third curstate) curgame 
                                      (setend curgame)))
-                 (list (make-mail (second remainworld) (list "endgame" 
-                                                             (string-append fuser " (" fusert ") has forfeited,")
-                                                             (string-append ruser " (" rusert ") wins."))))
+                 (cond [legitforfeit (list (make-mail (first curgame) endmsg)
+                                           (make-mail (second curgame) endmsg))]
+                       [else (list (make-mail (second remainworld) endmsg))])
                  ;(list (first curgame) (second curgame))
                  empty
                  )))
