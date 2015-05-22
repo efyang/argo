@@ -102,23 +102,6 @@
         (fourth game)
         #t))
 
-;returns worlds to disconnect from the game
-(define (endgdisco game)
-  (cond [(fifth game) (list (first game) (second game))]
-        [else empty]))
-
-;disconnects any ended games' worlds
-;runs on tick
-(define (endg model)
-  (local [(define games (third model))
-          ;(define dworlds (flatten (map endgdisco games)))
-          ]
-    (make-bundle model
-                 empty
-                 ;dworlds
-                 empty
-                 )))
-
 ;unistate -> unistate
 ;move is (list movetype x y)
 (define (handlemove curstate sender move)
@@ -149,7 +132,6 @@
                                       (make-mail p2w updmsg)
                                       (make-mail p1w (list "endgame" (first endmsg) (second endmsg)))
                                       (make-mail p2w (list "endgame" (first endmsg) (second endmsg))))
-                                ;(list p1w p2w)
                                 empty
                                 ))]
                    [else (make-bundle (list (first curstate) 
@@ -190,17 +172,19 @@
                                             (define p2u (iworld-name (second sendergame)))
                                             (define endtype (getwin pnums))
                                             (define endmsg (mkendgamemsg endtype p1u p2u))]
-                                      (make-bundle (list (first curstate) 
-                                                         (second curstate) 
-                                                         (replacenoref (third curstate) sendergame 
-                                                                      (setend sendergame)))
-                                                   (list (make-mail (first sendergame) (list "endgame" (first endmsg) (second endmsg)))
-                                                         (make-mail (second sendergame) (list "endgame" (first endmsg) (second endmsg))))
-                                                   empty
-                                                   ))]
+                                      (cond [(not (fifth sendergame)) (make-bundle (list (first curstate) 
+                                                                                         (second curstate) 
+                                                                                         (replacenoref (third curstate) sendergame 
+                                                                                                       (setend sendergame)))
+                                                                                   (list (make-mail (first sendergame) (list "endgame" (first endmsg) (second endmsg)))
+                                                                                         (make-mail (second sendergame) (list "endgame" (first endmsg) (second endmsg))))
+                                                                                   empty
+                                                                                   )]
+                                            [else curstate]))]
       [(string=? msgtype "endgrec") (make-bundle curstate
                                                 empty
-                                                (list sender))]
+                                                empty
+                                                )]
       [else curstate])))
 
 (define (getop t)
@@ -225,7 +209,6 @@
                  (cond [legitforfeit (list (make-mail (first curgame) endmsg)
                                            (make-mail (second curgame) endmsg))]
                        [else (list (make-mail (second remainworld) endmsg))])
-                 ;(list (first curgame) (second curgame))
                  empty
                  )))
 
@@ -233,5 +216,4 @@
           (on-new newworld)
           (on-msg handlemessage)
           (on-disconnect endremove)
-          ;(on-tick endg)
           )
