@@ -181,10 +181,6 @@
                                                                                    empty
                                                                                    )]
                                             [else curstate]))]
-      [(string=? msgtype "endgrec") (make-bundle curstate
-                                                empty
-                                                empty
-                                                )]
       [else curstate])))
 
 (define (getop t)

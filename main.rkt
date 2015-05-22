@@ -461,8 +461,7 @@
                    (list #f "Game Over." "")
                    (last curstate)))]
           [(string=? msgtype "endgame") 
-           (make-package (stop-with (append (init (init curstate)) (list (append (list #t) msginfo) (last curstate))))
-                         (list "endgrec"))]
+           (stop-with (append (init (init curstate)) (list (append (list #t) msginfo) (last curstate))))]
           [else curstate])))
 
 
