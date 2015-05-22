@@ -111,10 +111,13 @@
 ;runs on tick
 (define (endg model)
   (local [(define games (third model))
-          (define dworlds (flatten (map endgdisco games)))]
+          ;(define dworlds (flatten (map endgdisco games)))
+          ]
     (make-bundle model
                  empty
-                 dworlds)))
+                 ;dworlds
+                 empty
+                 )))
 
 ;unistate -> unistate
 ;move is (list movetype x y)
@@ -198,7 +201,7 @@
       [(string=? msgtype "endgrec") (make-bundle curstate
                                                 empty
                                                 (list sender))]
-      [else (make-bundle curstate empty empty)])))
+      [else curstate])))
 
 (define (getop t)
   (cond [(string-ci=? t "white") "Black"]
