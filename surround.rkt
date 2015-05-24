@@ -54,19 +54,28 @@
 ;board -> board
 (define (surroundupdate playernum move board blocknum)
   (local [(define addedboard (replace board (replace (list-ref board (second move)) playernum (first move)) (second move)))
-          (define padboard (padlst board 3 blocknum blocknum))
+          (define padboard (padlst addedboard 3 blocknum blocknum))
           (define doneboard (baseboard blocknum))]
     addedboard))
+;
+;if pt is opponent <- checked in main func already
+;and
+;is not on donelist already -> if on donelist and is opponent then just get value from donelist
+;donelist vals can be:
+;0 - not checked
+;1 - checked, not surrounded
+;2 - checked, surrounded
+;3 - checked, might be surrounded (dependent)
 
-;(define (ptsurrounded? xc yc padboard doneboard)
-;  (local [(define padxc (+ x 1))
-;          (define padyc (+ y 1))
-;          (define ptype (list-ref (list-ref padboard padyc) padxc))
-;          (define optype (getopposite ptype))
-;          (define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))
-;          (define p2 (list-ref (list-ref yc) (+ padxc 1)))
-;          (define p3 (list-ref (list-ref (+ padyc 1)) xc))
-;          (define p4 (list-ref (list-ref yc) xc))]
-;    (cond [(= optype p1 p2 p3 p4) #t]
-;          []
-;          [else])))
+(define (ptsurrounded? pnum xc yc padboard doneboard)
+  (local [(define padxc (+ xc 1))
+          (define padyc (+ yc 1))
+          (define ptype (list-ref (list-ref padboard padyc) padxc))
+          (define optype (getopposite ptype))
+          (define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))
+          (define p2 (list-ref (list-ref yc) (+ padxc 1)))
+          (define p3 (list-ref (list-ref (+ padyc 1)) xc))
+          (define p4 (list-ref (list-ref yc) xc))]
+    (cond [(= optype p1 p2 p3 p4) #t]
+          []
+          [else])))
