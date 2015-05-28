@@ -1,6 +1,11 @@
 #lang racket
 (provide surroundupdate baseboard getwin mkendgamemsg)
 
+(define (elem item lst)
+  (cond [(empty? lst) #f]
+	[(equal? item (first lst)) #t]
+	[else (elem item (rest lst))]))
+
 (define (mklist item num)
   (build-list num (lambda (x) item)))
 
@@ -57,6 +62,9 @@
           (define padboard (padlst addedboard 3 blocknum blocknum))
           (define doneboard (baseboard blocknum))]
     addedboard))
+
+(define (boardref x y board)
+  (list-ref (list-ref board y) x))
 ;
 ;if pt is opponent <- checked in main func already
 ;and
@@ -67,15 +75,15 @@
 ;2 - checked, surrounded
 ;3 - checked, might be surrounded (dependent)
 
-(define (ptsurrounded? pnum xc yc padboard doneboard)
-  (local [(define padxc (+ xc 1))
-          (define padyc (+ yc 1))
-          (define ptype (list-ref (list-ref padboard padyc) padxc))
-          (define optype (getopposite ptype))
-          (define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))
-          (define p2 (list-ref (list-ref yc) (+ padxc 1)))
-          (define p3 (list-ref (list-ref (+ padyc 1)) xc))
-          (define p4 (list-ref (list-ref yc) xc))]
-    (cond [(= optype p1 p2 p3 p4) #t]
-          []
-          [else])))
+#|(define (ptsurrounded? pnum xc yc padboard doneboard)|#
+  #|(local [(define padxc (+ xc 1))|#
+          #|(define padyc (+ yc 1))|#
+          #|(define ptype (list-ref (list-ref padboard padyc) padxc))|#
+          #|(define optype (getopposite ptype))|#
+          #|(define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))|#
+          #|(define p2 (list-ref (list-ref yc) (+ padxc 1)))|#
+          #|(define p3 (list-ref (list-ref (+ padyc 1)) xc))|#
+          #|(define p4 (list-ref (list-ref yc) xc))]|#
+    #|(cond [(= optype p1 p2 p3 p4) #t]|#
+          #|[()]|#
+          #|[else])))|#
