@@ -62,6 +62,14 @@
           (define padboard (padlst addedboard 3 blocknum blocknum))
           (define doneboard (baseboard blocknum))]
     addedboard))
+;fold through list; when checked, add to donelist; accumulator is (list curboard donelist)
+;
+(define (surround playerNum move board blockNum)
+  (local [(define addedBoard (replace board (replace (list-ref board (second move)) playerNum (first move)) (second move)))
+          (define padBoard (padlst addedBoard 3 blockNum blockNum))
+          (define doneBoard (baseboard blockNum))]
+    (foldl )))
+
 
 (define (boardref x y board)
   (list-ref (list-ref board y) x))
@@ -74,16 +82,17 @@
 ;1 - checked, not surrounded
 ;2 - checked, surrounded
 ;3 - checked, might be surrounded (dependent)
+;foldl point; point should return 
 
-#|(define (ptsurrounded? pnum xc yc padboard doneboard)|#
-  #|(local [(define padxc (+ xc 1))|#
-          #|(define padyc (+ yc 1))|#
-          #|(define ptype (list-ref (list-ref padboard padyc) padxc))|#
-          #|(define optype (getopposite ptype))|#
-          #|(define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))|#
-          #|(define p2 (list-ref (list-ref yc) (+ padxc 1)))|#
-          #|(define p3 (list-ref (list-ref (+ padyc 1)) xc))|#
-          #|(define p4 (list-ref (list-ref yc) xc))]|#
-    #|(cond [(= optype p1 p2 p3 p4) #t]|#
-          #|[()]|#
-          #|[else])))|#
+(define (ptsurrounded? pnum xc yc padboard doneboard)
+  (local [(define padxc (+ xc 1))
+	  (define padyc (+ yc 1))
+	  (define ptype (list-ref (list-ref padboard padyc) padxc))
+	  (define optype (getopposite ptype))
+	  (define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))
+	  (define p2 (list-ref (list-ref yc) (+ padxc 1)))
+	  (define p3 (list-ref (list-ref (+ padyc 1)) xc))
+	  (define p4 (list-ref (list-ref yc) xc))]
+    (cond [(= optype p1 p2 p3 p4) #t]
+	  [(not (= 0 (boardref xc yc doneboard))) #f]
+	  [else #t])))
