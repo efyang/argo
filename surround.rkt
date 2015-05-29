@@ -57,6 +57,10 @@
 ;check if opponent pieces are surrounded
 ;CHANGE THIS
 ;board -> board
+
+(define (boardref x y board)
+  (list-ref (list-ref board y) x))
+
 (define (replace2d lst x y item)
   (replace lst (replace (list-ref lst y) item x) y))
 (define (surroundupdate playernum move board blocknum)
@@ -70,13 +74,14 @@
   (local [(define addedBoard (replace board (replace (list-ref board (second move)) playerNum (first move)) (second move)))
 	  (define padBoard (padlst addedBoard 3 blockNum blockNum))
 	  (define doneBoard (baseboard blockNum))]
-    (rsurround playerNum padBoard doneBoard)))
-(define (rsurround playerNum board doneBoard [flatl (flatten doneBoard)])
-  ()
-;recrusively go through list, updating as you go; if maybe and surround then is surround; update the ones that are connected too
+    (rsurround playerNum 0 0 padBoard doneBoard)))
 
-(define (boardref x y board)
-  (list-ref (list-ref board y) x))
+(define (rsurround playerNum xc yc board doneBoard )
+  (local [(define uxc (+ xc 1))
+	  (define uyc (+ yc 1))
+	  (define bVal (boardref uxc uyc board))
+	  ]))
+;recursively go through list, updating as you go; if maybe and surround then is surround; update the ones that are connected too
 ;
 ;if pt is opponent <- checked in main func already
 ;and
