@@ -124,7 +124,10 @@
 					#|(number->string downVal) " "|#
 					#|(number->string leftVal) " "|#
 					#|(number->string rightVal) " "))|#
-                  (cond [(= opNum bVal) (cond [(= playerNum upVal downVal leftVal rightVal)
+                  (cond [(= opNum bVal) (cond [(and (or (= playerNum upVal) (= 3 upVal))
+						    (or (= playerNum downVal) (= 3 downVal))
+						    (or (= playerNum rightVal) (= 3 rightVal))
+						    (or (= playerNum leftVal) (= 3 leftVal)))
                                                (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
                                               [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)])]
                         [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)]))])))
