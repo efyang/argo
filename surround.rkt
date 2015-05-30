@@ -110,7 +110,7 @@
           [else (local [(define upVal (boardref uxc (- uyc 1) padBoard))
                         (define downVal (boardref uxc (+ uyc 1) padBoard))
                         (define leftVal (boardref (- uxc 1) uyc padBoard))
-                        (define rightVal (boardref (+ uxc 1) (- uyc 1) padBoard))
+                        (define rightVal (boardref (+ uxc 1) uyc padBoard))
                         (define updVal (boardref uxc (- uyc 1) padDoneBoard))
                         (define downdVal (boardref uxc (+ uyc 1) padDoneBoard))
                         (define leftdVal (boardref (- uxc 1) uyc padDoneBoard))
@@ -121,10 +121,15 @@
                                              [else (- xc 1)]))
                         (define nextyc (cond [(<= (- xc 1) -1) (- yc 1)]
                                              [else yc]))]
+		  #|(print (string-append (number->string upVal) " "|#
+					#|(number->string downVal) " "|#
+					#|(number->string leftVal) " "|#
+					#|(number->string rightVal) " "))|#
                   (cond [(= opNum bVal) (cond [(= playerNum upVal downVal leftVal rightVal)
                                                (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
                                               [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)])]
                         [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)]))])))
+(rsurround 1 2 2 (list (list 0 1 0) (list 1 2 1) (list 0 1 0)) (padlst (list (list 0 1 0) (list 1 2 1) (list 0 1 0)) 3 3 3) (baseboard 3) 3)
 ;if is player's then automark as not surrounded
 ;recursively go through list, updating as you go; if maybe and surround then is surround; update the ones that are connected too
 ;
