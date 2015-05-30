@@ -97,8 +97,9 @@
 (define (surround playerNum move board blockNum)
   (local [(define addedBoard (replace2d board (first move) (second move) playerNum))
 	  (define padBoard (padlst addedBoard 3 blockNum blockNum))
-	  (define doneBoard (baseboard blockNum))]
-    (rsurround playerNum (- blockNum 1) (- blockNum 1) addedBoard padBoard doneBoard blockNum)))
+	  (define doneBoard (baseboard blockNum))
+	  (define firstRound (rsurround playerNum (- blockNum 1) (- blockNum 1) addedBoard padBoard doneBoard blockNum))]
+    (rsurround (getopposite playerNum) (- blockNum 1) (- blockNum 1) firstRound (padlst firstRound 3 blockNum blockNum) doneBoard blockNum)))
 
 ;recursive meat of surround function
 (define (rsurround playerNum xc yc board padBoard doneBoard blockNum [padDoneBoard (padlst doneBoard 2 blockNum blockNum)]) 
