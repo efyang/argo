@@ -1,5 +1,5 @@
 #lang racket
-(provide surroundupdate baseboard getwin mkendgamemsg)
+(provide surroundupdate baseboard getwin mkendgamemsg surround)
 
 (define (elem item lst)
   (cond [(empty? lst) #f]
@@ -63,24 +63,69 @@
 
 (define (replace2d lst x y item)
   (replace lst (replace (list-ref lst y) item x) y))
+
 (define (surroundupdate playernum move board blocknum)
   (local [(define addedboard (replace board (replace (list-ref board (second move)) playernum (first move)) (second move)))
           (define padboard (padlst addedboard 3 blocknum blocknum))
           (define doneboard (baseboard blocknum))]
     addedboard))
+
+;counts and checks the number of checked and definitive ones and compares it to total
+(define (allChecked? doneBoard)
+  (local [(define dBFlat (flatten doneBoard))]
+    (= (length dBFlat) 
+       (count (lambda (x) (or (= x 1)
+			      (= x 2)))))))
+
+;checks doneBoard value anf resets accordingly
+(define (checkremove board doneBoard xc yc)
+  (cond [(= (boardref xc yc doneBoard) 2) (replace2d board xc yc 0)]
+        [else board]))
+
+;removes surrounded based on doneBoard
+(define (removesurrounded board doneBoard blockNum [xc (- blockNum 1)] [yc (- blockNum 1)])
+  (cond [(= yc -1) board]
+        [else (removesurrounded (checkremove board doneBoard xc yc) 
+                                doneBoard 
+                                blockNum
+                                (cond [(<= (- xc 1) -1) (- blockNum 1)]
+                                      [else (- xc 1)])
+                                (cond [(<= (- xc 1) -1) (- yc 1)]
+                                      [else yc]))]))
+(removesurrounded (list (list 1 1) (list 1 1)) (list (list 2 2) (list 2 2)) 2)
 ;fold through list; when checked, add to donelist; accumulator is (list curboard donelist)
 ;
 (define (surround playerNum move board blockNum)
-  (local [(define addedBoard (replace board (replace (list-ref board (second move)) playerNum (first move)) (second move)))
+  (local [(define addedBoard (replace2d board (first move) (second move) playerNum))
 	  (define padBoard (padlst addedBoard 3 blockNum blockNum))
 	  (define doneBoard (baseboard blockNum))]
-    (rsurround playerNum 0 0 padBoard doneBoard)))
+    (rsurround playerNum (- blockNum 1) (- blockNum 1) addedBoard padBoard doneBoard blockNum)))
 
-(define (rsurround playerNum xc yc board doneBoard )
+;recursive meat of surround function
+(define (rsurround playerNum xc yc board padBoard doneBoard blockNum [padDoneBoard (padlst doneBoard 2 blockNum blockNum)]) 
   (local [(define uxc (+ xc 1))
-	  (define uyc (+ yc 1))
-	  (define bVal (boardref uxc uyc board))
-	  ]))
+          (define uyc (+ yc 1))]
+    ;at the end go through doneBoard and simultaneously based on those values reset the ones on the board
+    (cond [(= 0 uyc) (removesurrounded board doneBoard blockNum)]
+          [else (local [(define upVal (boardref uxc (- uyc 1) padBoard))
+                        (define downVal (boardref uxc (+ uyc 1) padBoard))
+                        (define leftVal (boardref (- uxc 1) uyc padBoard))
+                        (define rightVal (boardref (+ uxc 1) (- uyc 1) padBoard))
+                        (define updVal (boardref uxc (- uyc 1) padDoneBoard))
+                        (define downdVal (boardref uxc (+ uyc 1) padDoneBoard))
+                        (define leftdVal (boardref (- uxc 1) uyc padDoneBoard))
+                        (define rightdVal (boardref (+ uxc 1) (- uyc 1) padDoneBoard))
+                        (define bVal (boardref uxc uyc padBoard))
+                        (define opNum (getopposite playerNum))
+                        (define nextxc (cond [(<= (- xc 1) -1) (- blockNum 1)]
+                                             [else (- xc 1)]))
+                        (define nextyc (cond [(<= (- xc 1) -1) (- yc 1)]
+                                             [else yc]))]
+                  (cond [(= opNum bVal) (cond [(= playerNum upVal downVal leftVal rightVal)
+                                               (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
+                                              [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)])]
+                        [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)]))])))
+;if is player's then automark as not surrounded
 ;recursively go through list, updating as you go; if maybe and surround then is surround; update the ones that are connected too
 ;
 ;if pt is opponent <- checked in main func already
