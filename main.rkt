@@ -442,14 +442,16 @@
                    (define move (second msginfo))
                    (define moveplayer (third msginfo))
                    (define ptype (first curstate))
-                   (define gotposns (eighth curstate))]
+                   (define gotposns (eighth curstate))
+                   (define newpnums (fourth msginfo))]
              (list ptype
                    (second curstate)
                    (third curstate)
                    newboard
-                   (cond [(= 1 (first move)) 
-                          (addpiece (fifth curstate) moveplayer)]
-                         [else (fifth curstate)])
+                   ;(cond [(= 1 (first move)) 
+                   ;       (addpiece (fifth curstate) moveplayer)]
+                   ;      [else (fifth curstate)])
+                   newpnums
                    (cond [(not (= moveplayer ptype)) (append (list (first move)) (mapmove (rest move) gotposns))]
                          [else (sixth curstate)])
                    (seventh curstate)

@@ -116,8 +116,8 @@
     (cond [(= (first move) 1)
            (local [(define surroundedboard (surround curplayer (rest move) curboard curboardsize))
                    (define updatedgame (list p1w p2w surroundedboard curboardsize #f))
-                   (define updmsg (list "updategame" surroundedboard move curplayer))
-                   (define pnums (countpieces surroundedboard))]
+                   (define pnums (countpieces surroundedboard))
+                   (define updmsg (list "updategame" surroundedboard move curplayer pnums))]
              ;board is full, end game
              (cond [(= 0 (first pnums))
                    (local [(define endtype (getwin pnums))
@@ -141,7 +141,7 @@
                                       (make-mail p2w updmsg))
                                 empty)]))]
           ;pass
-          [else (local [(define updmsg (list "updategame" curboard move curplayer))]
+          [else (local [(define updmsg (list "updategame" curboard move curplayer (countpieces curboard)))]
                   (make-bundle curstate
                                (list (make-mail p1w updmsg)
                                      (make-mail p2w updmsg))
