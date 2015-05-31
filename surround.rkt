@@ -109,9 +109,14 @@
 	  (define pady (+ connecty 1))]
     (cond [(>= connecty blockNum) doneBoard]
 	  [(= 3 (boardref connectx connecty doneBoard)) 
-	   (local [(define sidevals (list ))]
-	     (cond [(> (count (lambda (x) (= )) ) 0)]))]
-       	  [else (replaceconnects nextx nexty doneBoard padDoneBoard blockNum)])))
+	   (local [(define sideVals (list (boardref padx (+ pady 1) padDoneBoard)
+					  (boardref padx (- pady 1) padDoneBoard)
+					  (boardref (+ padx 1) pady padDoneBoard)
+					  (boardref (- padx 1) pady padDoneBoard)))
+		   (define filteredVals (filter (lambda (x) (or (= x 0) (= x 4) (= x 3)) sideVals)))]
+	     (cond [(> filteredVals 0) (replaceconnects nextx nexty (replace2d doneBoard connectx connecty (first filteredVals)) blockNum)]
+		   [else (replaceconnects nextx nexty (replace2d doneBoard connectx connecty 2) blockNum)]))]
+       	  [else (replaceconnects nextx nexty doneBoard blockNum)])))
 
 ;recursive meat of surround function
 (define (rsurround playerNum xc yc board padBoard doneBoard blockNum [padDoneBoard (padlst doneBoard 4 blockNum blockNum)]) 
