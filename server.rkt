@@ -67,15 +67,13 @@
 ;gets pos of item in lst
 (define (getpos item lst [curpos 0])
   (cond [(empty? lst) curpos]
-        [(equal? item (first lst)) curpos]
-        [else (getpos item (rest lst) (+ curpos 1))]))
-;gets everything before pos
+        [(equal? item (first lst)) curpos] [else (getpos item (rest lst) (+ curpos 1))])) ;gets everything before pos
 (define (lhead lst pos)
   (reverse (list-tail (reverse lst) (+ (- (length lst) pos) 1))))
 ;gets everything after pos
 (define (ltail lst pos)
   (list-tail lst pos))
-;replace item at lref index with newitem
+;replace item at lref index with newitem 
 (define (replace lst newitem lref)
   (append (lhead lst (+ lref 1)) (list newitem) (ltail lst (+ lref 1))))
 ;replace item in lst with newitem
@@ -187,6 +185,12 @@
   (cond [(string-ci=? t "white") "Black"]
         [else "White"]))
 ;removes and ends the disconnector's game
+
+(define (getunjoined world unjoinedgames)
+  (cond [(empty? unjoinedgames) empty]
+	[(= (first (first unjoinedgames)) world) (first unjoinedgames)]
+	[else (getunjoined world (rest unjoinedgames))]))
+
 (define (endremove curstate disconnector [legitforfeit #f])
   (local [(define curgame (sendersgame disconnector (third curstate)))
           (define remainworld (cond [(equal? disconnector (first curgame)) (list "White" (second curgame))]
@@ -198,7 +202,7 @@
           (define endmsg (list "endgame" 
                                (string-append fuser " (" fusert ") has forfeited,")
                                (string-append ruser " (" rusert ") wins.")))]
-    (make-bundle (list (first curstate)
+    (cond [(not (empty? curgame)) (make-bundle (list (first curstate)
                        (second curstate)
                        (replacenoref (third curstate) curgame 
                                      (setend curgame)))
@@ -206,7 +210,9 @@
                                            (make-mail (second curgame) endmsg))]
                        [else (list (make-mail (second remainworld) endmsg))])
                  empty
-                 )))
+                 )]
+	  [else (list (first curstate) (remove (getunjoined disconnector (second curstate)) (second curstate)) (third curstate))])))
+
 
 (universe (list empty empty empty)
           (on-new newworld)
