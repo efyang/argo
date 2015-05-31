@@ -123,7 +123,7 @@
   (local [(define uxc (+ xc 1))
           (define uyc (+ yc 1))]
     ;at the end go through doneBoard and simultaneously based on those values reset the ones on the board
-    (cond [(= 0 uyc) (removesurrounded board doneBoard blockNum)]
+    (cond [(= 0 uyc) (print doneBoard) (removesurrounded board doneBoard blockNum)]
           [else (local [(define upVal (boardref uxc (- uyc 1) padBoard))
                         (define downVal (boardref uxc (+ uyc 1) padBoard))
                         (define leftVal (boardref (- uxc 1) uyc padBoard))
