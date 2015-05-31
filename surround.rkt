@@ -101,6 +101,11 @@
 	  (define firstRound (rsurround playerNum (- blockNum 1) (- blockNum 1) addedBoard padBoard doneBoard blockNum))]
     (rsurround (getopposite playerNum) (- blockNum 1) (- blockNum 1) firstRound (padlst firstRound 3 blockNum blockNum) doneBoard blockNum)))
 
+(define (replaceconnects replacement connectx connecty doneBoard blockNum)
+  (local [(define nextx (cond [(= blockNum (+ connectx 1 )) ]))]
+    (cond [(= 3 (boardref connectx connecty doneBoard))]
+       	  [else (replaceconnects replacement )])))
+
 ;recursive meat of surround function
 (define (rsurround playerNum xc yc board padBoard doneBoard blockNum [padDoneBoard (padlst doneBoard 2 blockNum blockNum)]) 
   (local [(define uxc (+ xc 1))
@@ -117,19 +122,25 @@
                         (define rightdVal (boardref (+ uxc 1) (- uyc 1) padDoneBoard))
                         (define bVal (boardref uxc uyc padBoard))
                         (define opNum (getopposite playerNum))
+			(define valList (list upVal downVal leftVal rightVal))
+			(define leftovers (filter (lambda (x) (not (or (= x playerNum) (= x 3)))) valList))
                         (define nextxc (cond [(<= (- xc 1) -1) (- blockNum 1)]
                                              [else (- xc 1)]))
                         (define nextyc (cond [(<= (- xc 1) -1) (- yc 1)]
                                              [else yc]))]
 		  #|(print (string-append (number->string upVal) " "|#
-					#|(number->string downVal) " "|#
-					#|(number->string leftVal) " "|#
-					#|(number->string rightVal) " "))|#
-                  (cond [(= opNum bVal) (cond [(and (or (= playerNum upVal) (= 3 upVal))
-						    (or (= playerNum downVal) (= 3 downVal))
-						    (or (= playerNum rightVal) (= 3 rightVal))
-						    (or (= playerNum leftVal) (= 3 leftVal)))
+					#|(number->string downVal) " "|# #|(number->string leftVal) " "|# #|(number->string rightVal) " "))|#
+                  (cond [(= opNum bVal) (cond [(elem 0 leftovers)
+					       (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
+					      [(= 0 (length leftovers))
                                                (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
+					      [(= opNum upVal)
+					       (cond [(= updVal 1) 
+						      (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
+						     [(= updVal 2) 
+						      (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
+						     [(= updVal 3)
+						      ])]
                                               [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)])]
                         [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)]))])))
 
@@ -144,6 +155,7 @@
 ;1 - checked, not surrounded
 ;2 - checked, surrounded
 ;3 - checked, might be surrounded (dependent)
+;4 - is wall
 ;foldl point; point should return 
 
 #|(define (ptsurrounded? pnum xc yc padboard doneboard)|#
