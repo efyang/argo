@@ -188,29 +188,30 @@
 
 (define (getunjoined world unjoinedgames)
   (cond [(empty? unjoinedgames) empty]
-	[(= (first (first unjoinedgames)) world) (first unjoinedgames)]
+	[(equal? (first (first unjoinedgames)) world) (first unjoinedgames)]
 	[else (getunjoined world (rest unjoinedgames))]))
 
 (define (endremove curstate disconnector [legitforfeit #f])
   (local [(define curgame (sendersgame disconnector (third curstate)))
-          (define remainworld (cond [(equal? disconnector (first curgame)) (list "White" (second curgame))]
-                                    [else (list "Black" (first curgame))]))
-          (define fuser (iworld-name disconnector))
-          (define ruser (iworld-name (second remainworld)))
-          (define fusert (getop (first remainworld)))
-          (define rusert (first remainworld))
-          (define endmsg (list "endgame" 
-                               (string-append fuser " (" fusert ") has forfeited,")
-                               (string-append ruser " (" rusert ") wins.")))]
-    (cond [(not (empty? curgame)) (make-bundle (list (first curstate)
-                       (second curstate)
-                       (replacenoref (third curstate) curgame 
-                                     (setend curgame)))
-                 (cond [legitforfeit (list (make-mail (first curgame) endmsg)
-                                           (make-mail (second curgame) endmsg))]
-                       [else (list (make-mail (second remainworld) endmsg))])
-                 empty
-                 )]
+          ]
+    (cond [(not (empty? curgame)) (local [(define remainworld (cond [(equal? disconnector (first curgame)) (list "White" (second curgame))]
+                                    				    [else (list "Black" (first curgame))]))
+          				  (define fuser (iworld-name disconnector))
+          				  (define ruser (iworld-name (second remainworld)))
+          				  (define fusert (getop (first remainworld)))
+  				          (define rusert (first remainworld))
+				          (define endmsg (list "endgame" 
+				                               (string-append fuser " (" fusert ") has forfeited,")
+				                               (string-append ruser " (" rusert ") wins.")))]
+				    (make-bundle (list (first curstate)
+				                       (second curstate)
+				                       (replacenoref (third curstate) curgame 
+				                                     (setend curgame)))
+				                 (cond [legitforfeit (list (make-mail (first curgame) endmsg)
+				                                           (make-mail (second curgame) endmsg))]
+				                       [else (list (make-mail (second remainworld) endmsg))])
+				                 empty
+				                 ))]
 	  [else (list (first curstate) (remove (getunjoined disconnector (second curstate)) (second curstate)) (third curstate))])))
 
 
