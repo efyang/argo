@@ -91,7 +91,6 @@
                                       [else (- xc 1)])
                                 (cond [(<= (- xc 1) -1) (- yc 1)]
                                       [else yc]))]))
-(removesurrounded (list (list 1 1) (list 1 1)) (list (list 2 2) (list 2 2)) 2)
 ;fold through list; when checked, add to donelist; accumulator is (list curboard donelist)
 ;
 (define (surround playerNum move board blockNum)
@@ -101,13 +100,21 @@
 	  (define firstRound (rsurround playerNum (- blockNum 1) (- blockNum 1) addedBoard padBoard doneBoard blockNum))]
     (rsurround (getopposite playerNum) (- blockNum 1) (- blockNum 1) firstRound (padlst firstRound 3 blockNum blockNum) doneBoard blockNum)))
 
-(define (replaceconnects replacement connectx connecty doneBoard blockNum)
-  (local [(define nextx (cond [(= blockNum (+ connectx 1 )) ]))]
-    (cond [(= 3 (boardref connectx connecty doneBoard))]
-       	  [else (replaceconnects replacement )])))
+(define (replaceconnects connectx connecty doneBoard blockNum [padDoneBoard (padlst doneBoard 4 blockNum blockNum)])
+  (local [(define nextx (cond [(>= blockNum (+ connectx 1 )) 0]
+			      [else (+ connectx 1)]))
+	  (define nexty (cond [(>= blockNum (+ connectx 1)) (+ connecty 1)]
+			      [else connecty]))
+	  (define padx (+ connectx 1))
+	  (define pady (+ connecty 1))]
+    (cond [(>= connecty blockNum) doneBoard]
+	  [(= 3 (boardref connectx connecty doneBoard)) 
+	   (local [(define sidevals (list ))]
+	     (cond [(> (count (lambda (x) (= )) ) 0)]))]
+       	  [else (replaceconnects nextx nexty doneBoard padDoneBoard blockNum)])))
 
 ;recursive meat of surround function
-(define (rsurround playerNum xc yc board padBoard doneBoard blockNum [padDoneBoard (padlst doneBoard 2 blockNum blockNum)]) 
+(define (rsurround playerNum xc yc board padBoard doneBoard blockNum [padDoneBoard (padlst doneBoard 4 blockNum blockNum)]) 
   (local [(define uxc (+ xc 1))
           (define uyc (+ yc 1))]
     ;at the end go through doneBoard and simultaneously based on those values reset the ones on the board
@@ -124,25 +131,43 @@
                         (define opNum (getopposite playerNum))
 			(define valList (list upVal downVal leftVal rightVal))
 			(define leftovers (filter (lambda (x) (not (or (= x playerNum) (= x 3)))) valList))
+			(define dList (list updVal downdVal leftdVal rightdVal))
                         (define nextxc (cond [(<= (- xc 1) -1) (- blockNum 1)]
                                              [else (- xc 1)]))
                         (define nextyc (cond [(<= (- xc 1) -1) (- yc 1)]
                                              [else yc]))]
 		  #|(print (string-append (number->string upVal) " "|#
 					#|(number->string downVal) " "|# #|(number->string leftVal) " "|# #|(number->string rightVal) " "))|#
-                  (cond [(= opNum bVal) (cond [(elem 0 leftovers)
-					       (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
-					      [(= 0 (length leftovers))
+                  (cond [(= opNum bVal) (cond [(= 0 (length leftovers))
                                                (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
-					      [(= opNum upVal)
-					       (cond [(= updVal 1) 
-						      (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
-						     [(= updVal 2) 
-						      (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
-						     [(= updVal 3)
-						      ])]
-                                              [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)])]
-                        [else (rsurround playerNum nextxc nextyc board padBoard doneBoard blockNum)]))])))
+					      [(elem 2 leftovers) (cond [(elem 0 leftovers)  ; not surrounded
+									 (cond [(elem 3 dList)
+										(rsurround playerNum
+											   nextxc 
+											   nextyc 
+											   board
+											   padBoard 
+											   (replaceconnects xc yc (replace2d doneBoard xc yc 1) blockNum) 
+											   blockNum)] 
+									       ;has a maybe, go back and mark those as not surrounded
+									       [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)])]  
+
+								    	[(and (>= (- 4 (length leftovers)) 1) ;at least 1 enemy piece 
+									 (= (count (lambda (x) (= opNum x)) valList) (length leftovers))) ;rest of pieces are allies
+									 (cond [(= (count (lambda (x) (= x 3)) dList) (length leftovers))
+										(rsurround playerNum 
+											   nextxc
+											   nextyc
+											   board 
+											   padBoard
+											   (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum)
+											   blockNum)] ;all are maybes, go back and mark them as surrounded
+									       [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
+									[else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])] 
+					      [(and (not (elem 3 dList)) (elem 0 leftovers))
+					       (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
+					      [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
+                        [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)]))])))
 
 ;if is player's then automark as not surrounded
 ;recursively go through list, updating as you go; if maybe and surround then is surround; update the ones that are connected too
@@ -155,18 +180,10 @@
 ;1 - checked, not surrounded
 ;2 - checked, surrounded
 ;3 - checked, might be surrounded (dependent)
-;4 - is wall
+;4 - is wall or other player
 ;foldl point; point should return 
-
-#|(define (ptsurrounded? pnum xc yc padboard doneboard)|#
-  #|(local [(define padxc (+ xc 1))|#
-	  #|(define padyc (+ yc 1))|#
-	  #|(define ptype (list-ref (list-ref padboard padyc) padxc))|#
-	  #|(define optype (getopposite ptype))|#
-	  #|(define p1 (list-ref (list-ref (+ padyc 1)) (+ padxc 1)))|#
-	  #|(define p2 (list-ref (list-ref yc) (+ padxc 1)))|#
-	  #|(define p3 (list-ref (list-ref (+ padyc 1)) xc))|#
-	  #|(define p4 (list-ref (list-ref yc) xc))]|#
-    #|(cond [(= optype p1 p2 p3 p4) #t]|#
-	  #|[(not (= 0 (boardref xc yc doneboard))) #f]|#
-	  #|[else #t])))|#
+;board values are
+;0 - not filled
+;1 - player 1
+;2 - player 2
+;3 - wall
