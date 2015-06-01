@@ -194,7 +194,7 @@
 (define (endremove curstate disconnector [legitforfeit #f])
   (local [(define curgame (sendersgame disconnector (third curstate)))
           ]
-    (cond [(not (empty? curgame)) (local [(define remainworld (cond [(equal? disconnector (first curgame)) (list "White" (second curgame))]
+    (cond [(and (not (empty? curgame)) (not (fifth curgame))) (local [(define remainworld (cond [(equal? disconnector (first curgame)) (list "White" (second curgame))]
                                     				    [else (list "Black" (first curgame))]))
           				  (define fuser (iworld-name disconnector))
           				  (define ruser (iworld-name (second remainworld)))
@@ -212,7 +212,11 @@
 				                       [else (list (make-mail (second remainworld) endmsg))])
 				                 empty
 				                 ))]
-	  [else (list (first curstate) (remove (getunjoined disconnector (second curstate)) (second curstate)) (third curstate))])))
+	  [(fifth curgame) (make-bundle (list (first curstate) (second curstate) (remove curgame (third curstate))) 
+					empty empty)]
+	  [else (make-bundle (list (first curstate) (remove (getunjoined disconnector (second curstate)) (second curstate)) (third curstate))
+			     empty 
+			     empty)])))
 
 
 (universe (list empty empty empty)
