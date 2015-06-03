@@ -112,7 +112,7 @@
                  (define curplayer (cond [(equal? p1w sender) 1]
                                          [else 2]))]
     (cond [(= (first move) 1)
-           (local [(define surroundedboard (surround curplayer (rest move) curboard curboardsize))
+           (local [(define surroundedboard (surround curplayer (addMove curplayer curboard (rest move)) curboardsize))
                    (define updatedgame (list p1w p2w surroundedboard curboardsize #f))
                    (define pnums (countpieces surroundedboard))
                    (define updmsg (list "updategame" surroundedboard move curplayer pnums))]
