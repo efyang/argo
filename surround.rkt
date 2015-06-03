@@ -1,4 +1,5 @@
 #lang racket
+(require rackunit)
 (provide surroundupdate baseboard getwin mkendgamemsg surround)
 
 (define (elem item lst)
@@ -76,7 +77,7 @@
        (count (lambda (x) (or (= x 1)
 			      (= x 2)))))))
 
-;checks doneBoard value anf resets accordingly
+;checks doneBoard value and resets accordingly
 (define (checkremove board doneBoard xc yc)
   (cond [(= (boardref xc yc doneBoard) 2) (replace2d board xc yc 0)]
         [else board]))
@@ -123,7 +124,7 @@
   (local [(define uxc (+ xc 1))
           (define uyc (+ yc 1))]
     ;at the end go through doneBoard and simultaneously based on those values reset the ones on the board
-    (cond [(= 0 uyc) (print doneBoard) (removesurrounded board doneBoard blockNum)]
+    (cond [(= 0 uyc) (removesurrounded board doneBoard blockNum)]
           [else (local [(define upVal (boardref uxc (- uyc 1) padBoard))
                         (define downVal (boardref uxc (+ uyc 1) padBoard))
                         (define leftVal (boardref (- uxc 1) uyc padBoard))
@@ -134,44 +135,61 @@
                         (define rightdVal (boardref (+ uxc 1) (- uyc 1) padDoneBoard))
                         (define bVal (boardref uxc uyc padBoard))
                         (define opNum (getopposite playerNum))
-			(define valList (list upVal downVal leftVal rightVal))
-			(define leftovers (filter (lambda (x) (not (or (= x playerNum) (= x 3)))) valList))
-			(define dList (list updVal downdVal leftdVal rightdVal))
+                        (define valList (list upVal downVal leftVal rightVal))
+                        (define leftovers (filter (lambda (x) (not (or (= x playerNum) (= x 3)))) valList))
+                        (define dList (list updVal downdVal leftdVal rightdVal))
                         (define nextxc (cond [(<= (- xc 1) -1) (- blockNum 1)]
                                              [else (- xc 1)]))
                         (define nextyc (cond [(<= (- xc 1) -1) (- yc 1)]
                                              [else yc]))]
-		  #|(print (string-append (number->string upVal) " "|#
-					#|(number->string downVal) " "|# #|(number->string leftVal) " "|# #|(number->string rightVal) " "))|#
-                  (cond [(= opNum bVal) (cond [(= 0 (length leftovers))
-                                               (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
-					      [(elem 2 leftovers) (cond [(elem 0 leftovers)  ; not surrounded
-									 (cond [(elem 3 dList)
-										(rsurround playerNum
-											   nextxc 
-											   nextyc 
-											   board
-											   padBoard 
-											   (replaceconnects xc yc (replace2d doneBoard xc yc 1) blockNum) 
-											   blockNum)] 
-									       ;has a maybe, go back and mark those as not surrounded
-									       [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)])]  
-
-								    	[(and (>= (- 4 (length leftovers)) 1) ;at least 1 enemy piece 
-									 (= (count (lambda (x) (= opNum x)) valList) (length leftovers))) ;rest of pieces are allies
-									 (cond [(= (count (lambda (x) (= x 3)) dList) (length leftovers))
-										(rsurround playerNum 
-											   nextxc
-											   nextyc
-											   board 
-											   padBoard
-											   (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum)
-											   blockNum)] ;all are maybes, go back and mark them as surrounded
-									       [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
-									[else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])] 
-					      [(and (not (elem 3 dList)) (elem 0 leftovers))
-					       (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
-					      [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
+                  ;logging
+                  (print (string-append (number->string bVal) " " 
+                                        ;(number->string xc) " " (number->string yc)
+                                        ))
+                  (cond [(= opNum bVal) (cond 
+                                          ; all opposite -> surrounded ---working
+                                          [(= 0 (length leftovers))
+                                           (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
+                                          ; has >= 1 liberty -> not surrounded ---working
+                                          [(elem 0 leftovers) 
+                                           (print "has liberty")
+                                           (cond [(elem 3 dList) (rsurround playerNum nextxc nextyc board padBoard 
+                                                                            (replaceconnects xc yc (replace2d doneBoard xc yc 1) blockNum) 
+                                                                            blockNum)] 
+                                                 [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)])] 
+                                          ; surrounded by allies (completely)
+                                          [(= (count (lambda (x) (= x opNum)) leftovers) 4) 
+                                           (print "surrounded by allies")
+                                           (cond 
+                                             [(or (= 4 (count (lambda (x) (= x 3)) dList)) ;all maybes -> surrounded
+                                                  (>= (count (lambda (x) (= x 2)) dList) 1)) ;>= 1 surrounded -> surrounded
+                                              (rsurround playerNum nextxc nextyc board padBoard 
+                                                         (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum) 
+                                                         blockNum)]
+                                             ;>= 1 not surrounded -> not surrounded
+                                             [(>= (count (lambda (x) (= x 1)) dList) 1)
+                                              (print "ally not surrounded")
+                                              (rsurround playerNum nextxc nextyc board padBoard 
+                                                         (replaceconnects xc yc (replace2d doneBoard xc yc 1) blockNum) 
+                                                         blockNum)]
+                                             ;else/not all checked -> maybe ---working
+                                             [else (print "is else") (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
+                                          ; >= 1 enemy/wall + rest are allies
+                                          [(local [(define leftLen (length leftovers))
+                                                   (define lenDiff (- 4 leftLen))]
+                                             (print (string-append (number->string (count (lambda (x) (= x opNum)) valList))  " " (number->string lenDiff)))
+                                             (and (>= 1 lenDiff)
+                                                  (= (count (lambda (x) (= x opNum)) valList) lenDiff)))
+                                           (print "allies surrounded")
+                                           (cond 
+                                             ;all allies are maybe -> surrounded
+                                             [(= (count (lambda (x) (= x 3)) dList))
+                                              (rsurround playerNum nextxc nextyc board padBoard 
+                                                         (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum) 
+                                                         blockNum)]
+                                             ;less than all maybe -> maybe
+                                             [else (print "is maybe")(rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
+                                          [else (print "else") (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
                         [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)]))])))
 
 ;if is player's then automark as not surrounded
@@ -192,3 +210,45 @@
 ;1 - player 1
 ;2 - player 2
 ;3 - wall
+
+;tests
+
+(define testCase1 '((0 0 0 0 0)
+                    (0 0 0 0 0)
+                    (0 1 2 1 0)
+                    (0 1 2 1 0)
+                    (0 0 1 0 0)))
+
+(define testCase1res '((0 0 0 0 0)
+                       (0 0 1 0 0)
+                       (0 1 0 1 0)
+                       (0 1 0 1 0)
+                       (0 0 1 0 0)))
+
+(define testCase2 '((0 0 0 0 0)
+                    (0 1 0 0 0)
+                    (1 2 2 1 0)
+                    (0 1 2 1 0)
+                    (0 0 1 0 0)))
+
+(define testCase2res '((0 0 0 0 0)
+                       (0 1 1 0 0)
+                       (1 0 0 1 0)
+                       (0 1 0 1 0)
+                       (0 0 1 0 0)))
+
+(define testCase3 '((0 0 0 0 0)
+                    (0 1 2 1 0)
+                    (1 2 2 2 1)
+                    (0 1 2 1 0)
+                    (0 0 1 0 0)))
+
+(define testCase3res '((0 0 0 0 0)
+                       (0 1 2 1 0)
+                       (1 2 2 2 1)
+                       (0 1 2 1 0)
+                       (0 0 1 0 0)))
+
+(check-equal? (surround 1 (list 2 1) testCase1 5) testCase1res)
+(check-equal? (surround 1 (list 2 1) testCase2 5) testCase2res)
+(check-equal? (surround 1 (list 2 0) testCase3 5) testCase2res)
