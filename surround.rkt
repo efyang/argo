@@ -243,10 +243,10 @@
                     (0 1 2 1 0)
                     (0 0 1 0 0)))
 
-(define testCase3res '((0 0 0 0 0)
-                       (0 1 2 1 0)
-                       (1 2 2 2 1)
-                       (0 1 2 1 0)
+(define testCase3res '((0 0 1 0 0)
+                       (0 1 0 1 0)
+                       (1 0 0 0 1)
+                       (0 1 0 1 0)
                        (0 0 1 0 0)))
 
 (check-equal? (surround 1 (list 2 1) testCase1 5) testCase1res)
