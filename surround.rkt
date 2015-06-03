@@ -148,11 +148,13 @@
                   (print (string-append (number->string bVal) " " 
                                         ;(number->string xc) " " (number->string yc)
                                         ))
-                  (cond [(= opNum bVal) 
-                         (print "enemy")
+                  ;(print "|")
+                  ;(print valList)
+                  ;(print dList)
+                  (cond [(= opNum bVal) (print "opval")
                          (cond 
                            ; all opposite -> surrounded ---working
-                           [(= 0 (length leftovers))
+                           [(= 0 (length leftovers)) (print "surrounded")
                             (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
                            ; has >= 1 liberty -> not surrounded ---working
                            [(elem 0 leftovers) 
@@ -178,11 +180,12 @@
                                           blockNum)]
                               ;else/not all checked -> maybe ---working
                               [else (print valList)
-                                    (print dList)(print "is else") (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
-                           ; >= 1 enemy/wall + rest are allies
+                                    (print dList)
+                                    (print "is else") (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
+                           ; >= 1 enemy/wall + rest are allies --PROBLEM AREA
                            [(local [(define leftLen (length leftovers))
                                     (define lenDiff (- 4 leftLen))]
-                              (print (string-append (number->string (count (lambda (x) (= x opNum)) valList))  " " (number->string lenDiff)))
+                              ;(print (string-append (number->string (count (lambda (x) (= x opNum)) valList))  " " (number->string lenDiff)))
                               (and (>= 1 lenDiff)
                                    (= (count (lambda (x) (= x opNum)) valList) lenDiff)))
                             (print "allies surrounded")
@@ -194,7 +197,10 @@
                                           blockNum)]
                               ;less than all maybe -> maybe
                               [else (print "is maybe")(rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
-                           [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
+                           [else (print "is else") 
+                                 (print valList)
+                                 (print dList)
+                                 (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
                         [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)]))])))
 
 ;if is player's then automark as not surrounded
@@ -217,19 +223,6 @@
 ;3 - wall
 
 ;tests
-
-(define testCase '((2 1 0 0 0)
-                   (1 0 1 0 0)
-                   (0 1 2 1 0)
-                   (0 0 1 0 0)
-                   (0 0 0 0 0)))
-
-
-(define testCaseres '((0 1 0 0 0)
-                      (1 0 1 0 0)
-                      (0 1 0 1 0)
-                      (0 0 1 0 0)
-                      (0 0 0 0 0)))
 
 (define testCase1 '((0 0 0 0 0)
                     (0 0 1 0 0)
@@ -267,7 +260,6 @@
                        (0 1 0 1 0)
                        (0 0 1 0 0)))
 
-(check-equal? (surround 1 testCase 5) testCaseres) ;works
 (check-equal? (surround 1 testCase1 5) testCase1res)
 (check-equal? (surround 1 testCase2 5) testCase2res)
 (check-equal? (surround 1 testCase3 5) testCase3res)
