@@ -134,7 +134,7 @@
                         (define updVal (boardref uxc (- uyc 1) padDoneBoard))
                         (define downdVal (boardref uxc (+ uyc 1) padDoneBoard))
                         (define leftdVal (boardref (- uxc 1) uyc padDoneBoard))
-                        (define rightdVal (boardref (+ uxc 1) (- uyc 1) padDoneBoard))
+                        (define rightdVal (boardref (+ uxc 1) uyc padDoneBoard))
                         (define bVal (boardref uxc uyc padBoard))
                         (define opNum (getopposite playerNum))
                         (define valList (list upVal downVal leftVal rightVal))
@@ -199,8 +199,11 @@
                                (rsurround playerNum nextxc nextyc board padBoard 
                                           (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum) ;--problem with replaceconnects - not replacing correctly
                                           blockNum)]
+                              ;allies are already set -> their set value
+                              [(elem 1 dList) (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
+                              [(elem 2 dList) (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
                               ;less than all maybe -> maybe
-                              [else (print "is maybe")(rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
+                              [else (print "is maybe") (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
                            [else (print "is else") 
                                  (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
                         [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)]))])))
@@ -262,9 +265,9 @@
                        (0 1 0 1 0)
                        (0 0 1 0 0)))
 
-(check-equal? (surround 1 testCase1 5) testCase1res)
-(check-equal? (surround 1 testCase2 5) testCase2res) ;--still not working
-(check-equal? (surround 1 testCase3 5) testCase3res)
+(check-equal? (surround 1 testCase1 5) testCase1res) ;works
+(check-equal? (surround 1 testCase2 5) testCase2res) ;works
+(check-equal? (surround 1 testCase3 5) testCase3res) ;works
 
 (define resetTest '((0 0 0 0 0) 
                     (0 0 0 0 0) 
