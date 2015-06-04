@@ -1,5 +1,4 @@
 #lang racket
-(require rackunit)
 (provide surroundupdate baseboard getwin mkendgamemsg surround addMove)
 
 (define (elem item lst)
@@ -144,28 +143,19 @@
                                              [else (- xc 1)]))
                         (define nextyc (cond [(<= (- xc 1) -1) (- yc 1)]
                                              [else yc]))]
-                  ;logging
-                  (print (string-append (number->string bVal) " " 
-                                        ;(number->string xc) " " (number->string yc)
-                                        ))
-                  ;(print "|")
-                  ;(print valList)
-                  ;(print dList)
-                  (cond [(= opNum bVal) (print "opval")
+                  (cond [(= opNum bVal)
                          (cond 
                            ; all opposite -> surrounded ---working
-                           [(= 0 (length leftovers)) (print "surrounded")
+                           [(= 0 (length leftovers))
                             (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
                            ; has >= 1 liberty -> not surrounded ---working
                            [(elem 0 leftovers) 
-                            (print "has liberty")
                             (cond [(elem 3 dList) (rsurround playerNum nextxc nextyc board padBoard 
                                                              (replaceconnects xc yc (replace2d doneBoard xc yc 1) blockNum) 
                                                              blockNum)] 
                                   [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)])] 
                            ; surrounded by allies (completely)
                            [(= (count (lambda (x) (= x opNum)) leftovers) 4) 
-                            (print "surrounded by allies")
                             (cond 
                               [(or (= 4 (count (lambda (x) (= x 3)) dList)) ;all maybes -> surrounded
                                    (>= (count (lambda (x) (= x 2)) dList) 1)) ;>= 1 surrounded -> surrounded
@@ -174,28 +164,20 @@
                                           blockNum)]
                               ;>= 1 not surrounded -> not surrounded
                               [(>= (count (lambda (x) (= x 1)) dList) 1)
-                               (print "ally not surrounded")
                                (rsurround playerNum nextxc nextyc board padBoard 
                                           (replaceconnects xc yc (replace2d doneBoard xc yc 1) blockNum) 
                                           blockNum)]
                               ;else/not all checked -> maybe ---working
-                              [else (print valList)
-                                    (print dList)
-                                    (print "is else") (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
+                              [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
                            ; >= 1 enemy/wall + rest are allies --PROBLEM AREA
                            [(local [(define leftLen (length leftovers))
                                     (define opAmnt (- 4 leftLen))
                                     (define allyCount (count (lambda (x) (= x 2)) valList))]
                               (and (>= opAmnt 1)
                                    (= allyCount leftLen)))
-                            (print "allies surrounded")
-                            (print valList)
-                            (print dList)
-                            (print doneBoard)
                             (cond 
                               ;all allies are maybe -> surrounded
                               [(= (count (lambda (x) (= x 3)) dList) (count (lambda (x) (= x 2)) valList))
-                               (print "setting allies to surrounded")
                                (rsurround playerNum nextxc nextyc board padBoard 
                                           (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum) ;--problem with replaceconnects - not replacing correctly
                                           blockNum)]
@@ -203,9 +185,8 @@
                               [(elem 1 dList) (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
                               [(elem 2 dList) (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
                               ;less than all maybe -> maybe
-                              [else (print "is maybe") (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
-                           [else (print "is else") 
-                                 (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
+                              [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
+                           [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
                         [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)]))])))
 
 ;if is player's then automark as not surrounded
@@ -226,57 +207,3 @@
 ;1 - player 1
 ;2 - player 2
 ;3 - wall
-
-;tests
-
-(define testCase1 '((0 0 0 0 0)
-                    (0 0 1 0 0)
-                    (0 1 2 1 0)
-                    (0 1 2 1 0)
-                    (0 0 1 0 0)))
-
-(define testCase1res '((0 0 0 0 0)
-                       (0 0 1 0 0)
-                       (0 1 0 1 0)
-                       (0 1 0 1 0)
-                       (0 0 1 0 0)))
-
-(define testCase2 '((0 0 0 0 0)
-                    (0 1 1 0 0)
-                    (1 2 2 1 0)
-                    (0 1 2 1 0)
-                    (0 0 1 0 0)))
-
-(define testCase2res '((0 0 0 0 0)
-                       (0 1 1 0 0)
-                       (1 0 0 1 0)
-                       (0 1 0 1 0)
-                       (0 0 1 0 0)))
-
-(define testCase3 '((0 0 1 0 0)
-                    (0 1 2 1 0)
-                    (1 2 2 2 1)
-                    (0 1 2 1 0)
-                    (0 0 1 0 0)))
-
-(define testCase3res '((0 0 1 0 0)
-                       (0 1 0 1 0)
-                       (1 0 0 0 1)
-                       (0 1 0 1 0)
-                       (0 0 1 0 0)))
-
-(check-equal? (surround 1 testCase1 5) testCase1res) ;works
-(check-equal? (surround 1 testCase2 5) testCase2res) ;works
-(check-equal? (surround 1 testCase3 5) testCase3res) ;works
-
-(define resetTest '((0 0 0 0 0) 
-                    (0 0 0 0 0) 
-                    (0 0 2 4 4) 
-                    (4 4 3 4 4) 
-                    (4 4 4 4 4)))
-
-(check-equal? (replaceconnects 2 2 resetTest 5) '((0 0 0 0 0) 
-                                                  (0 0 0 0 0) 
-                                                  (0 0 2 4 4) 
-                                                  (4 4 2 4 4) 
-                                                  (4 4 4 4 4)))
