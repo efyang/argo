@@ -1,7 +1,7 @@
-# argo
+# Argo
 
-Go game in Racket.
+Go game written in Racket.
 
-#### Todo:
+# Todo:
 
-* FIX SURROUND FUNCTION
+* Alpha testing

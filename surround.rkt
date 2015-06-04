@@ -201,7 +201,6 @@
 ;2 - checked, surrounded
 ;3 - checked, might be surrounded (dependent)
 ;4 - is wall or other player
-;foldl point; point should return 
 ;board values are
 ;0 - not filled
 ;1 - player 1
