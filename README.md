@@ -1,6 +1,6 @@
 # Argo
 
-Go game written in Racket.
+Go game written in Racket from scratch.
 
 # Todo:
 
