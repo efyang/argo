@@ -4,6 +4,9 @@ cd $base
 if [ -d "$base/dist/linux" ]; then
 	rm -rf "$base/dist/linux"
 fi
+if [ -e "$base/release/Argo.tar.gz" ]; then
+	rm -rf "$base/release/Argo.tar.gz"
+fi
 echo "Compiling Client..."
 raco exe "src/argo.rkt"
 echo "Compiling Server..."
