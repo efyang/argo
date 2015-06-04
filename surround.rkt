@@ -102,24 +102,24 @@
 	  (define doneBoard (baseboard blockNum))
 	  (define firstRound (rsurround playerNum (- blockNum 1) (- blockNum 1) board padBoard doneBoard blockNum))]
     (rsurround (getopposite playerNum) (- blockNum 1) (- blockNum 1) firstRound (padlst firstRound 3 blockNum blockNum) doneBoard blockNum)))
-
-(define (replaceconnects connectx connecty doneBoard blockNum [padDoneBoard (padlst doneBoard 4 blockNum blockNum)])
-  (local [(define nextx (cond [(>= blockNum (+ connectx 1 )) 0]
-			      [else (+ connectx 1)]))
-	  (define nexty (cond [(>= blockNum (+ connectx 1)) (+ connecty 1)]
-			      [else connecty]))
-	  (define padx (+ connectx 1))
-	  (define pady (+ connecty 1))]
+;--PROBLEM AREA
+(define (replaceconnects connectx connecty doneBoard blockNum [padDoneBoard (padlst doneBoard 4 blockNum blockNum)]) 
+  (local [(define nextx (cond [(>= (+ connectx 1 ) blockNum) 0]
+                              [else (+ connectx 1)]))
+          (define nexty (cond [(>= (+ connectx 1) blockNum) (+ connecty 1)]
+                              [else connecty]))
+          (define padx (+ connectx 1))
+          (define pady (+ connecty 1))]
     (cond [(>= connecty blockNum) doneBoard]
-	  [(= 3 (boardref connectx connecty doneBoard)) 
-	   (local [(define sideVals (list (boardref padx (+ pady 1) padDoneBoard)
-					  (boardref padx (- pady 1) padDoneBoard)
-					  (boardref (+ padx 1) pady padDoneBoard)
-					  (boardref (- padx 1) pady padDoneBoard)))
-		   (define filteredVals (filter (lambda (x) (or (= x 0) (= x 4) (= x 3)) sideVals)))]
-	     (cond [(> filteredVals 0) (replaceconnects nextx nexty (replace2d doneBoard connectx connecty (first filteredVals)) blockNum)]
-		   [else (replaceconnects nextx nexty (replace2d doneBoard connectx connecty 2) blockNum)]))]
-       	  [else (replaceconnects nextx nexty doneBoard blockNum)])))
+          [(= 3 (boardref connectx connecty doneBoard)) 
+           (local [(define sideVals (list (boardref padx (+ pady 1) padDoneBoard)
+                                          (boardref padx (- pady 1) padDoneBoard)
+                                          (boardref (+ padx 1) pady padDoneBoard)
+                                          (boardref (- padx 1) pady padDoneBoard)))
+                   (define filteredVals (filter (lambda (x) (not (or (= x 0) (= x 4) (= x 3)))) sideVals))]
+             (cond [(> (length filteredVals) 0) (replaceconnects nextx nexty (replace2d doneBoard connectx connecty (first filteredVals)) blockNum)]
+                   [else (replaceconnects nextx nexty (replace2d doneBoard connectx connecty 2) blockNum)]))]
+          [else (replaceconnects nextx nexty doneBoard blockNum)])))
 
 ;recursive meat of surround function
 (define (rsurround playerNum xc yc board padBoard doneBoard blockNum [padDoneBoard (padlst doneBoard 4 blockNum blockNum)]) 
@@ -184,22 +184,24 @@
                                     (print "is else") (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
                            ; >= 1 enemy/wall + rest are allies --PROBLEM AREA
                            [(local [(define leftLen (length leftovers))
-                                    (define lenDiff (- 4 leftLen))]
-                              ;(print (string-append (number->string (count (lambda (x) (= x opNum)) valList))  " " (number->string lenDiff)))
-                              (and (>= 1 lenDiff)
-                                   (= (count (lambda (x) (= x opNum)) valList) lenDiff)))
+                                    (define opAmnt (- 4 leftLen))
+                                    (define allyCount (count (lambda (x) (= x 2)) valList))]
+                              (and (>= opAmnt 1)
+                                   (= allyCount leftLen)))
                             (print "allies surrounded")
+                            (print valList)
+                            (print dList)
+                            (print doneBoard)
                             (cond 
                               ;all allies are maybe -> surrounded
-                              [(= (count (lambda (x) (= x 3)) dList))
+                              [(= (count (lambda (x) (= x 3)) dList) (count (lambda (x) (= x 2)) valList))
+                               (print "setting allies to surrounded")
                                (rsurround playerNum nextxc nextyc board padBoard 
-                                          (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum) 
+                                          (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum) ;--problem with replaceconnects - not replacing correctly
                                           blockNum)]
                               ;less than all maybe -> maybe
                               [else (print "is maybe")(rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
                            [else (print "is else") 
-                                 (print valList)
-                                 (print dList)
                                  (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)])]
                         [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 4) blockNum)]))])))
 
@@ -261,5 +263,17 @@
                        (0 0 1 0 0)))
 
 (check-equal? (surround 1 testCase1 5) testCase1res)
-(check-equal? (surround 1 testCase2 5) testCase2res)
+(check-equal? (surround 1 testCase2 5) testCase2res) ;--still not working
 (check-equal? (surround 1 testCase3 5) testCase3res)
+
+(define resetTest '((0 0 0 0 0) 
+                    (0 0 0 0 0) 
+                    (0 0 2 4 4) 
+                    (4 4 3 4 4) 
+                    (4 4 4 4 4)))
+
+(check-equal? (replaceconnects 2 2 resetTest 5) '((0 0 0 0 0) 
+                                                  (0 0 0 0 0) 
+                                                  (0 0 2 4 4) 
+                                                  (4 4 2 4 4) 
+                                                  (4 4 4 4 4)))
