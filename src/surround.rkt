@@ -101,7 +101,6 @@
 	  (define doneBoard (baseboard blockNum))
 	  (define firstRound (rsurround playerNum (- blockNum 1) (- blockNum 1) board padBoard doneBoard blockNum))]
     (rsurround (getopposite playerNum) (- blockNum 1) (- blockNum 1) firstRound (padlst firstRound 3 blockNum blockNum) doneBoard blockNum)))
-;--PROBLEM AREA
 (define (replaceconnects connectx connecty doneBoard blockNum [padDoneBoard (padlst doneBoard 4 blockNum blockNum)]) 
   (local [(define nextx (cond [(>= (+ connectx 1 ) blockNum) 0]
                               [else (+ connectx 1)]))
@@ -145,10 +144,10 @@
                                              [else yc]))]
                   (cond [(= opNum bVal)
                          (cond 
-                           ; all opposite -> surrounded ---working
+                           ; all opposite -> surrounded
                            [(= 0 (length leftovers))
                             (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 2) blockNum)]
-                           ; has >= 1 liberty -> not surrounded ---working
+                           ; has >= 1 liberty -> not surrounded
                            [(elem 0 leftovers) 
                             (cond [(elem 3 dList) (rsurround playerNum nextxc nextyc board padBoard 
                                                              (replaceconnects xc yc (replace2d doneBoard xc yc 1) blockNum) 
@@ -167,19 +166,19 @@
                                (rsurround playerNum nextxc nextyc board padBoard 
                                           (replaceconnects xc yc (replace2d doneBoard xc yc 1) blockNum) 
                                           blockNum)]
-                              ;else/not all checked -> maybe ---working
+                              ;else/not all checked -> maybe
                               [else (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 3) blockNum)])]
-                           ; >= 1 enemy/wall + rest are allies --PROBLEM AREA
+                           ; >= 1 enemy/wall + rest are allies
                            [(local [(define leftLen (length leftovers))
                                     (define opAmnt (- 4 leftLen))
-                                    (define allyCount (count (lambda (x) (= x 2)) valList))]
+                                    (define allyCount (count (lambda (x) (= x opNum)) valList))]
                               (and (>= opAmnt 1)
                                    (= allyCount leftLen)))
                             (cond 
                               ;all allies are maybe -> surrounded
-                              [(= (count (lambda (x) (= x 3)) dList) (count (lambda (x) (= x 2)) valList))
+                              [(= (count (lambda (x) (= x 3)) dList) (count (lambda (x) (= x opNum)) valList))
                                (rsurround playerNum nextxc nextyc board padBoard 
-                                          (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum) ;--problem with replaceconnects - not replacing correctly
+                                          (replaceconnects xc yc (replace2d doneBoard xc yc 2) blockNum) 
                                           blockNum)]
                               ;allies are already set -> their set value
                               [(elem 1 dList) (rsurround playerNum nextxc nextyc board padBoard (replace2d doneBoard xc yc 1) blockNum)]
